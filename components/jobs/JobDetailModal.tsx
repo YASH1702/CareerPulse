@@ -3,6 +3,7 @@
 import { X, ExternalLink, Building2, MapPin, DollarSign, Calendar, Sparkles, Check, CheckCircle2, Bookmark, Trash2 } from "lucide-react";
 import { formatRelativeDate } from "@/utils/format";
 import { toggleSaveJobAction, deleteJobAction } from "@/actions/jobs";
+import { AIAnalysisPanel } from "./AIAnalysisPanel";
 import type { Job, AIAnalysis } from "@prisma/client";
 
 interface Props {
@@ -109,33 +110,12 @@ export function JobDetailModal({ job, onClose }: Props) {
 
         {/* Body */}
         <div className="p-6 overflow-y-auto space-y-6 flex-1 text-sm">
-          {/* AI Match Overview if available */}
-          {job.aiAnalysis && (
-            <div className="p-4 rounded-xl bg-blue-500/[0.06] border border-blue-500/20 space-y-3">
-              <div className="flex items-center gap-2">
-                <Sparkles size={16} className="text-blue-400" />
-                <h3 className="font-semibold text-white">AI Match Summary</h3>
-              </div>
-              {job.aiAnalysis.whyApply && (
-                <p className="text-slate-300 leading-relaxed text-xs">
-                  {job.aiAnalysis.whyApply}
-                </p>
-              )}
-              {job.aiAnalysis.strengths && job.aiAnalysis.strengths.length > 0 && (
-                <div className="space-y-1">
-                  <p className="text-xs font-semibold text-emerald-400 uppercase tracking-wider">Key Strengths</p>
-                  <ul className="text-xs text-slate-300 space-y-1">
-                    {job.aiAnalysis.strengths.map((s, idx) => (
-                      <li key={idx} className="flex items-start gap-2">
-                        <Check size={12} className="text-emerald-400 mt-0.5 shrink-0" />
-                        <span>{s}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-          )}
+          {/* AI Match Overview */}
+          <AIAnalysisPanel
+            jobId={job.id}
+            analysis={job.aiAnalysis || null}
+            matchScore={job.matchScore}
+          />
 
           {/* Required Skills */}
           {job.requiredSkills && job.requiredSkills.length > 0 && (

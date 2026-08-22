@@ -1,23 +1,14 @@
-﻿/**
+/**
  * AI Safety Guards
  * 
  * Enforces that AI output never claims skills/experience
  * the user does not actually have in their profile.
  */
 
+import type { AIMatchResult } from "@/types/ai";
+
 export interface ProfileSkills {
   names: string[];
-}
-
-export interface AIMatchResult {
-  matchScore: number;
-  recommendation: "APPLY" | "CONSIDER" | "SKIP";
-  confidence: number;
-  strengths: string[];
-  missingSkills: string[];
-  concerns: string[];
-  matchedRequirements: string[];
-  unmatchedRequirements: string[];
 }
 
 /**
