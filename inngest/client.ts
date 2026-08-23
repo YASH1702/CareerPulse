@@ -1,9 +1,4 @@
-﻿import { Inngest } from "inngest";
-
-export const inngest = new Inngest({
-  id: "jobpilot-ai",
-  name: "JobPilot AI",
-});
+import { Inngest } from "inngest";
 
 // Event types
 export type Events = {
@@ -23,3 +18,8 @@ export type Events = {
     data: { applicationId: string; userId: string };
   };
 };
+
+export const inngest = new Inngest({
+  id: "jobpilot-ai",
+  name: "JobPilot AI",
+});

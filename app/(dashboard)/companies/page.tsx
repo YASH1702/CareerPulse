@@ -1,11 +1,17 @@
 import { Metadata } from "next";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
-export const metadata: Metadata = { title: "Companies | JobPilot AI" };
-export default function CompaniesPage() {
+import { CompanyList } from "@/components/companies/CompanyList";
+import { getCompanies } from "@/actions/companies";
+
+export const metadata: Metadata = { title: "Company Intelligence | JobPilot AI" };
+
+export default async function CompaniesPage() {
+  const companies = await getCompanies();
+
   return (
-    <div>
-      <DashboardHeader title="Companies" />
-      <div className="glass-card p-8 text-center text-slate-500">Company tracker coming soon</div>
+    <div className="space-y-6">
+      <DashboardHeader title="Company Intelligence" />
+      <CompanyList initialCompanies={companies} />
     </div>
   );
 }

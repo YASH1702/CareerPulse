@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { FileText, Trash2, Star, ChevronDown, ChevronUp, Loader2, Edit2, Check, X } from "lucide-react";
 import { deleteResumeAction, updateResumeNameAction } from "@/actions/resumes";
 import { formatRelativeDate } from "@/utils/format";
@@ -85,10 +86,16 @@ export function ResumeCard({ resume, isOnly }: ResumeCardProps) {
         </div>
 
         <div className="flex items-center gap-1.5 shrink-0">
+          <Link
+            href={`/resumes/${resume.id}`}
+            className="px-2.5 py-1.5 text-xs bg-blue-600/10 hover:bg-blue-600/20 border border-blue-500/20 text-blue-400 hover:text-blue-300 rounded-lg transition-colors font-medium"
+          >
+            ATS Print
+          </Link>
           {resume.fileUrl && (
             <a href={resume.fileUrl} target="_blank" rel="noopener noreferrer"
               className="px-2.5 py-1.5 text-xs bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.07] text-slate-400 hover:text-white rounded-lg transition-colors">
-              View
+              File
             </a>
           )}
           <button onClick={() => setExpanded(!expanded)}
