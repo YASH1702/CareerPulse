@@ -1,5 +1,17 @@
-﻿import { Metadata } from "next";
-export const metadata: Metadata = { title: "Applications" };
-export default function ApplicationsPage() {
-  return <div className="glass-card p-8 text-center text-slate-400">Application Tracker — coming in Phase 13</div>;
+import { Metadata } from "next";
+import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
+import { KanbanBoard } from "@/components/applications/KanbanBoard";
+import { getApplications } from "@/actions/applications";
+
+export const metadata: Metadata = { title: "Application Tracker | JobPilot AI" };
+
+export default async function ApplicationsPage() {
+  const applications = await getApplications();
+
+  return (
+    <div className="space-y-6">
+      <DashboardHeader title="Application Pipeline" />
+      <KanbanBoard initialApplications={applications} />
+    </div>
+  );
 }
