@@ -87,7 +87,7 @@ export function DashboardNav() {
             </Link>
           );
         })}
-        <p className="text-[10px] text-slate-700 px-3 pt-2">v0.1.0 · Phase 3</p>
+        <p className="text-[10px] text-slate-600 px-3 pt-2">JobPilot AI · v1.0.0</p>
       </div>
     </aside>
   );
