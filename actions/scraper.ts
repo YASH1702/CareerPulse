@@ -8,7 +8,7 @@ import { fetchGreenhouseJobs, fetchLeverJobs } from "@/lib/jobs/sources/ats-boar
 import { generateJobHash } from "@/utils/hash";
 import { evaluateJobPreFilters } from "@/lib/jobs/filter";
 import { calculateKeywordOverlap } from "@/lib/scoring/rank";
-import { getScraperLocationQuery } from "@/lib/jobs/locations";
+import { getScraperLocationQuery, isLocationMatchingIndia } from "@/lib/jobs/locations";
 import { revalidatePath } from "next/cache";
 import type { NormalizedJob } from "@/lib/jobs/sources/types";
 
@@ -164,11 +164,21 @@ export async function runAutoScrapeAction(options?: {
           location: job.location ?? null,
           salaryMax: job.salaryMax ?? null,
         },
-        profile
+        userProfile
       );
 
+      // Check India / State Location Filter
+      const locationCheck = isLocationMatchingIndia(job.location || "", targetState);
+      let isFiltered = filterResult.isFiltered;
+      let filterReason = filterResult.filterReason;
+
+      if (!locationCheck.matches) {
+        isFiltered = true;
+        filterReason = locationCheck.reason || "Location outside India target";
+      }
+
       // Fast initial scoring
-      const overlap = calculateKeywordOverlap(job.requiredSkills, profile.skills);
+      const overlap = calculateKeywordOverlap(job.requiredSkills, userProfile.skills);
       const titleLower = job.title.toLowerCase();
       const roleMatch = keywords.some((k) => titleLower.includes(k.toLowerCase()));
       const matchScore = roleMatch
@@ -213,17 +223,17 @@ export async function runAutoScrapeAction(options?: {
           sourceJobId: job.sourceJobId,
           applicationUrl: job.applicationUrl,
           contentHash,
-          isFiltered: filterResult.isFiltered,
-          filterReason: filterResult.filterReason,
+          isFiltered,
+          filterReason,
           freshness: job.freshness,
           datePosted: job.datePosted,
-          matchScore: filterResult.isFiltered ? null : matchScore,
-          matchCategory: filterResult.isFiltered ? null : matchCategory,
+          matchScore: isFiltered ? null : matchScore,
+          matchCategory: isFiltered ? null : matchCategory,
           jobStatus: "NEW",
         },
       });
 
-      if (filterResult.isFiltered) {
+      if (isFiltered) {
         filteredOut++;
       } else {
         newImported++;

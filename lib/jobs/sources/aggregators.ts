@@ -1,6 +1,7 @@
 import type { NormalizedJob } from "./types";
 import { JobSource, RemoteType, EmploymentType } from "@prisma/client";
 import { evaluateJobFreshness } from "../freshness";
+import { isLocationMatchingIndia } from "../locations";
 
 const COMMON_SKILLS = [
   "React", "TypeScript", "JavaScript", "Node.js", "Python", "Go", "Golang", "Rust",
@@ -63,10 +64,15 @@ export async function fetchRemoteOKJobs(keywords: string[] = []): Promise<Normal
         if (!matchesKeyword) continue;
       }
 
+      // Filter for India / Open Global Remote
+      if (!isLocationMatchingIndia(item.location || "Remote").matches) {
+        continue;
+      }
+
       jobs.push({
         title: item.position.trim(),
         companyName: item.company.trim(),
-        location: item.location || "Remote",
+        location: item.location || "Remote (India & Global)",
         remoteType: RemoteType.REMOTE,
         employmentType: EmploymentType.FULL_TIME,
         description: item.description ? item.description.replace(/<[^>]*>?/gm, "").slice(0, 4000) : item.position,
@@ -125,10 +131,16 @@ export async function fetchHimalayasJobs(keywords: string[] = []): Promise<Norma
         if (!matches) continue;
       }
 
+      // Filter for India / Open Global Remote
+      const locStr = item.location || (Array.isArray(item.locationRestrictions) ? item.locationRestrictions.join(", ") : "Remote");
+      if (!isLocationMatchingIndia(locStr).matches) {
+        continue;
+      }
+
       jobs.push({
         title: item.title.trim(),
         companyName: item.companyName.trim(),
-        location: item.location || "Remote",
+        location: locStr || "Remote (India & Global)",
         remoteType: RemoteType.REMOTE,
         employmentType: EmploymentType.FULL_TIME,
         description: item.excerpt ? item.excerpt.slice(0, 4000) : item.title,
@@ -172,6 +184,11 @@ export async function fetchArbeitnowJobs(): Promise<NormalizedJob[]> {
 
     for (const item of data.data.slice(0, 25)) {
       if (!item.title || !item.company_name) continue;
+
+      // Filter for India / Open Global Remote
+      if (!isLocationMatchingIndia(item.location || "").matches) {
+        continue;
+      }
 
       const datePosted = item.created_at ? new Date(item.created_at * 1000) : new Date();
       const freshness = evaluateJobFreshness(datePosted);
