@@ -67,8 +67,9 @@ export function AutoApplyQueue({ initialQueue }: Props) {
         success: false,
         totalFetched: 0,
         newImported: 0,
-        duplicates: 0,
+        existingPreserved: queue.length,
         filteredOut: 0,
+        totalActiveQueue: queue.length,
         error: err instanceof Error ? err.message : "Scraping failed.",
       });
     } finally {
@@ -138,11 +139,14 @@ export function AutoApplyQueue({ initialQueue }: Props) {
       </div>
 
       {scrapeResult && (
-        <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl text-xs text-blue-300 flex items-center justify-between">
-          <span>
-            Scraped <strong>{scrapeResult.totalFetched}</strong> jobs · Imported <strong>{scrapeResult.newImported}</strong> new · Skipped <strong>{scrapeResult.duplicates}</strong> duplicates.
-          </span>
-          <button onClick={() => setScrapeResult(null)} className="text-slate-400 hover:text-white">✕</button>
+        <div className="p-3.5 bg-blue-500/10 border border-blue-500/20 rounded-xl text-xs text-blue-300 flex items-center justify-between shadow-sm">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 size={15} className="text-emerald-400 shrink-0" />
+            <span>
+              <strong>Pipeline Synced:</strong> Sourced <strong>{scrapeResult.totalFetched}</strong> roles across India · <strong>{scrapeResult.newImported}</strong> new added · <strong>{scrapeResult.existingPreserved}</strong> existing roles preserved in queue (<strong>{scrapeResult.totalActiveQueue}</strong> total ready to apply).
+            </span>
+          </div>
+          <button onClick={() => setScrapeResult(null)} className="text-slate-400 hover:text-white ml-2 text-xs">✕</button>
         </div>
       )}
 

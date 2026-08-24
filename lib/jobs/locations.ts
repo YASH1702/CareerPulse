@@ -137,7 +137,7 @@ export function isRoleMatchingTargets(
 }
 
 /**
- * Validates whether a job posting is based in India or open to Indian applicants (Global/Remote).
+ * Validates whether a job posting is explicitly based in India or an Indian state/tech hub.
  */
 export function isLocationMatchingIndia(
   jobLocation: string = "",
@@ -145,29 +145,28 @@ export function isLocationMatchingIndia(
 ): { matches: boolean; reason?: string } {
   const loc = (jobLocation || "").toLowerCase().trim();
 
-  // If no location provided, treat as open remote
   if (!loc) {
-    return { matches: true };
+    return { matches: false, reason: "Missing location" };
   }
 
-  // Check if explicit Indian city / state / India keyword is present
-  const hasIndiaKeyword = ALL_INDIAN_LOCATIONS.some((ind) => {
-    const pattern = new RegExp(`(?:^|[^a-z0-9])${ind}(?:$|[^a-z0-9])`, "i");
-    return pattern.test(loc);
-  });
-
-  // Check if foreign restriction keywords are present
+  // 1. Foreign keywords check
   const isForeignRestricted = FOREIGN_RESTRICTED_KEYWORDS.some((foreign) => {
     const pattern = new RegExp(`(?:^|[^a-z0-9])${foreign}(?:$|[^a-z0-9])`, "i");
     return pattern.test(loc);
   });
 
-  // If it mentions foreign countries/states and DOES NOT explicitly specify India
+  // 2. Check if explicit Indian city / state / India keyword is present
+  const hasIndiaKeyword = ALL_INDIAN_LOCATIONS.some((ind) => {
+    const pattern = new RegExp(`(?:^|[^a-z0-9])${ind}(?:$|[^a-z0-9])`, "i");
+    return pattern.test(loc);
+  });
+
+  // If foreign country/city is present and India is NOT present, reject immediately
   if (isForeignRestricted && !hasIndiaKeyword) {
     return { matches: false, reason: `Location "${jobLocation}" is restricted to foreign region outside India` };
   }
 
-  // If it explicitly matches an Indian city/state or India
+  // If it matches an Indian city/state or India
   if (hasIndiaKeyword) {
     if (selectedState && selectedState !== "all_india" && selectedState !== "India") {
       const stateKeywords = STATE_KEYWORD_MAP[selectedState] || [];
@@ -176,31 +175,19 @@ export function isLocationMatchingIndia(
         return pattern.test(loc);
       });
 
-      const isGeneralIndiaOrRemote =
+      const isGeneralIndia =
         loc === "india" ||
-        loc.includes("remote") ||
-        loc.includes("anywhere") ||
-        loc.includes("worldwide");
+        loc.includes("remote, india") ||
+        loc.includes("india, remote") ||
+        loc.includes("india - remote") ||
+        loc.includes("pan india");
 
-      if (!matchesSelectedState && !isGeneralIndiaOrRemote) {
+      if (!matchesSelectedState && !isGeneralIndia) {
         return { matches: false, reason: `Location "${jobLocation}" does not match selected state: ${selectedState}` };
       }
     }
     return { matches: true };
   }
 
-  // Pure open remote (e.g. "Remote", "Worldwide", "Anywhere", "Global Remote") WITHOUT foreign country names
-  const isPureOpenRemote =
-    (loc === "remote" ||
-      loc.includes("worldwide") ||
-      loc.includes("anywhere") ||
-      loc.includes("work from anywhere") ||
-      loc.includes("global remote")) &&
-    !isForeignRestricted;
-
-  if (isPureOpenRemote) {
-    return { matches: true };
-  }
-
-  return { matches: false, reason: `Location "${jobLocation}" is not in India or open remote` };
+  return { matches: false, reason: `Location "${jobLocation}" is outside India` };
 }

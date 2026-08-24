@@ -16,8 +16,9 @@ export interface SourcingResult {
   success: boolean;
   totalFetched: number;
   newImported: number;
-  duplicates: number;
+  existingPreserved: number;
   filteredOut: number;
+  totalActiveQueue: number;
   error?: string;
 }
 
@@ -249,13 +250,24 @@ export async function runAutoScrapeAction(options?: {
     revalidatePath("/jobs");
     revalidatePath("/recommendations");
     revalidatePath("/analytics");
+    revalidatePath("/auto-apply");
+
+    const totalActiveQueue = await prisma.job.count({
+      where: {
+        userId,
+        jobStatus: { not: "APPLIED" },
+        isSkipped: false,
+        isFiltered: false,
+      },
+    });
 
     return {
       success: true,
       totalFetched: allFetchedJobs.length,
       newImported,
-      duplicates,
+      existingPreserved: duplicates,
       filteredOut,
+      totalActiveQueue,
     };
   } catch (err) {
     console.error("[runAutoScrapeAction Error]", err);
@@ -263,8 +275,9 @@ export async function runAutoScrapeAction(options?: {
       success: false,
       totalFetched: 0,
       newImported: 0,
-      duplicates: 0,
+      existingPreserved: 0,
       filteredOut: 0,
+      totalActiveQueue: 0,
       error: err instanceof Error ? err.message : "Failed to run automated scraper",
     };
   }
