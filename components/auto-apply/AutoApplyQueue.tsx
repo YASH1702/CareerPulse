@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Zap, Play, CheckCircle2, Loader2, ExternalLink, Sparkles, Building2, MapPin, DollarSign } from "lucide-react";
-import { executeAutoApplyForJobAction } from "@/actions/auto-apply";
+import { executeAutoApplyForJobAction, getAutoApplyQueueAction } from "@/actions/auto-apply";
 import { runAutoScrapeAction, SourcingResult } from "@/actions/scraper";
 import { RecruiterOutreachModal } from "@/components/jobs/RecruiterOutreachModal";
 import { InterviewPrepModal } from "@/components/jobs/InterviewPrepModal";
@@ -19,6 +20,7 @@ interface Props {
 }
 
 export function AutoApplyQueue({ initialQueue }: Props) {
+  const router = useRouter();
   const [queue, setQueue] = useState<QueuedJob[]>(initialQueue);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [isScraping, setIsScraping] = useState(false);
@@ -31,6 +33,7 @@ export function AutoApplyQueue({ initialQueue }: Props) {
 
     if (res.success) {
       setQueue((prev) => prev.filter((j) => j.id !== jobId));
+      router.refresh();
     } else {
       alert(res.error || "Auto-apply failed.");
     }
@@ -39,9 +42,24 @@ export function AutoApplyQueue({ initialQueue }: Props) {
   const handleRunScraper = async () => {
     setIsScraping(true);
     setScrapeResult(null);
-    const res = await runAutoScrapeAction();
-    setIsScraping(false);
-    setScrapeResult(res);
+    try {
+      const res = await runAutoScrapeAction();
+      setScrapeResult(res);
+      const freshQueue = await getAutoApplyQueueAction();
+      setQueue(freshQueue as unknown as QueuedJob[]);
+      router.refresh();
+    } catch (err) {
+      setScrapeResult({
+        success: false,
+        totalFetched: 0,
+        newImported: 0,
+        duplicates: 0,
+        filteredOut: 0,
+        error: err instanceof Error ? err.message : "Scraping failed.",
+      });
+    } finally {
+      setIsScraping(false);
+    }
   };
 
   return (

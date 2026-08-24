@@ -7,6 +7,7 @@ import { fetchLinkedInGuestJobs } from "@/lib/jobs/sources/linkedin-guest";
 import { fetchGreenhouseJobs, fetchLeverJobs } from "@/lib/jobs/sources/ats-boards";
 import { generateJobHash } from "@/utils/hash";
 import { evaluateJobPreFilters } from "@/lib/jobs/filter";
+import { calculateKeywordOverlap } from "@/lib/scoring/rank";
 import { revalidatePath } from "next/cache";
 import type { NormalizedJob } from "@/lib/jobs/sources/types";
 
@@ -100,6 +101,16 @@ export async function runAutoScrapeAction(sources?: {
         profile
       );
 
+      // Fast initial scoring
+      const overlap = calculateKeywordOverlap(job.requiredSkills, profile.skills);
+      const titleLower = job.title.toLowerCase();
+      const roleMatch = keywords.some((k) => titleLower.includes(k.toLowerCase()));
+      const matchScore = roleMatch
+        ? Math.min(95, Math.max(78, 75 + Math.round(overlap.overlapPercentage * 0.2)))
+        : Math.max(70, overlap.overlapPercentage);
+      const matchCategory =
+        matchScore >= 85 ? "EXCELLENT" : matchScore >= 75 ? "STRONG" : "GOOD";
+
       // Auto link company
       let company = await prisma.company.findFirst({
         where: { userId, name: { equals: job.companyName, mode: "insensitive" } },
@@ -140,6 +151,8 @@ export async function runAutoScrapeAction(sources?: {
           filterReason: filterResult.filterReason,
           freshness: job.freshness,
           datePosted: job.datePosted,
+          matchScore: filterResult.isFiltered ? null : matchScore,
+          matchCategory: filterResult.isFiltered ? null : matchCategory,
           jobStatus: "NEW",
         },
       });

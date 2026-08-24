@@ -96,12 +96,15 @@ export async function getAutoApplyQueueAction() {
   return prisma.job.findMany({
     where: {
       userId,
-      matchScore: { gte: 75 },
       jobStatus: { not: "APPLIED" },
       isSkipped: false,
+      isFiltered: false,
     },
-    orderBy: { matchScore: "desc" },
-    take: 20,
+    orderBy: [
+      { matchScore: "desc" },
+      { dateDiscovered: "desc" },
+    ],
+    take: 30,
     include: {
       aiAnalysis: true,
       applications: true,
