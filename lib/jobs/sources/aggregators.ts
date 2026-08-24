@@ -10,11 +10,16 @@ const COMMON_SKILLS = [
   "DevOps", "AI", "LLM", "Machine Learning", "PyTorch", "TensorFlow"
 ];
 
+function escapeRegex(str: string): string {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 function extractSkillsFromText(text: string): string[] {
   const found = new Set<string>();
   const lower = text.toLowerCase();
   for (const skill of COMMON_SKILLS) {
-    const pattern = new RegExp(`\\b${skill.toLowerCase()}\\b`, "i");
+    const escaped = escapeRegex(skill.toLowerCase());
+    const pattern = new RegExp(`(?:^|[^a-z0-9])${escaped}(?:$|[^a-z0-9])`, "i");
     if (pattern.test(lower)) {
       found.add(skill);
     }
