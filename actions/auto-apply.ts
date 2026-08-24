@@ -103,8 +103,8 @@ export async function getAutoApplyQueueAction() {
       isFiltered: false,
     },
     orderBy: [
-      { matchScore: "desc" },
       { dateDiscovered: "desc" },
+      { matchScore: "desc" },
     ],
     take: 30,
     include: {

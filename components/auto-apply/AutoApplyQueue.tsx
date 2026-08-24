@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Zap, Play, CheckCircle2, Loader2, ExternalLink, Sparkles, Building2, MapPin, DollarSign } from "lucide-react";
+import { Zap, Play, CheckCircle2, Loader2, ExternalLink, Sparkles, Building2, MapPin, DollarSign, ArrowUpDown } from "lucide-react";
 import { executeAutoApplyForJobAction, getAutoApplyQueueAction } from "@/actions/auto-apply";
 import { runAutoScrapeAction, SourcingResult } from "@/actions/scraper";
 import { RecruiterOutreachModal } from "@/components/jobs/RecruiterOutreachModal";
@@ -25,8 +25,20 @@ export function AutoApplyQueue({ initialQueue }: Props) {
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [isScraping, setIsScraping] = useState(false);
   const [scrapeResult, setScrapeResult] = useState<SourcingResult | null>(null);
-
   const [selectedState, setSelectedState] = useState("all_india");
+  const [sortBy, setSortBy] = useState<"date" | "score" | "company">("date");
+
+  const sortedQueue = useMemo(() => {
+    return [...queue].sort((a, b) => {
+      if (sortBy === "score") {
+        return (b.matchScore ?? 0) - (a.matchScore ?? 0);
+      }
+      if (sortBy === "company") {
+        return a.companyName.localeCompare(b.companyName);
+      }
+      return new Date(b.dateDiscovered || b.createdAt).getTime() - new Date(a.dateDiscovered || a.createdAt).getTime();
+    });
+  }, [queue, sortBy]);
 
   const handleApplySingle = async (jobId: string) => {
     setProcessingId(jobId);
@@ -71,7 +83,7 @@ export function AutoApplyQueue({ initialQueue }: Props) {
         <div>
           <h3 className="font-semibold text-white text-sm flex items-center gap-2">
             <Zap size={16} className="text-blue-400" />
-            <span>Auto-Apply Live Candidate Queue ({queue.length} Ready)</span>
+            <span>Auto-Apply Live Candidate Queue ({sortedQueue.length} Ready)</span>
           </h3>
           <p className="text-xs text-slate-400 mt-0.5">
             Targeting India &amp; top Indian state tech hubs (Bangalore, Hyderabad, Pune, Delhi NCR, Remote).
@@ -79,6 +91,20 @@ export function AutoApplyQueue({ initialQueue }: Props) {
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
+          {/* Sort By Dropdown */}
+          <div className="flex items-center gap-1.5 bg-slate-900/80 border border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-white">
+            <ArrowUpDown size={12} className="text-slate-400 shrink-0" />
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as "date" | "score" | "company")}
+              className="bg-transparent text-xs text-slate-200 outline-none cursor-pointer pr-1"
+            >
+              <option value="date" className="bg-slate-900 text-white">⏱️ Newest Discovered</option>
+              <option value="score" className="bg-slate-900 text-white">🎯 Highest Match %</option>
+              <option value="company" className="bg-slate-900 text-white">🏢 Company Name</option>
+            </select>
+          </div>
+
           {/* State / City Selector */}
           <div className="flex items-center gap-1.5 bg-slate-900/80 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white">
             <MapPin size={13} className="text-blue-400 shrink-0" />
@@ -121,7 +147,7 @@ export function AutoApplyQueue({ initialQueue }: Props) {
       )}
 
       {/* Queue Cards */}
-      {queue.length === 0 ? (
+      {sortedQueue.length === 0 ? (
         <div className="glass-card p-12 text-center space-y-3">
           <div className="w-12 h-12 rounded-2xl bg-white/[0.03] flex items-center justify-center mx-auto text-slate-500">
             <Zap size={24} />
@@ -133,7 +159,7 @@ export function AutoApplyQueue({ initialQueue }: Props) {
         </div>
       ) : (
         <div className="space-y-3">
-          {queue.map((job) => (
+          {sortedQueue.map((job) => (
             <div
               key={job.id}
               className="glass-card p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
