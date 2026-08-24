@@ -28,7 +28,7 @@ export async function runAutoScrapeAction(sources?: {
   try {
     const userId = await getRequiredUserId();
 
-    const profile = await prisma.profile.findUnique({
+    let profile = await prisma.profile.findUnique({
       where: { userId },
       include: {
         skills: true,
@@ -37,15 +37,59 @@ export async function runAutoScrapeAction(sources?: {
     });
 
     if (!profile) {
-      return { success: false, totalFetched: 0, newImported: 0, duplicates: 0, filteredOut: 0, error: "Profile not found" };
+      profile = await prisma.profile.create({
+        data: {
+          userId,
+          headline: "Full Stack Engineer",
+          currentRole: "Software Engineer",
+          targetRoles: ["Software Engineer", "Frontend Developer", "Full Stack Developer", "Backend Developer"],
+          preferredLocations: ["Remote", "Bangalore", "Hyderabad", "Pune"],
+          remotePreference: "OPEN",
+          salaryMin: 1200000,
+          salaryMax: 3500000,
+          salaryCurrency: "INR",
+          noticePeriod: "30 days",
+          yearsExperience: 3,
+        },
+        include: {
+          skills: true,
+          targetCompanies: true,
+        },
+      });
+
+      // Add default skills
+      await prisma.skill.createMany({
+        data: [
+          { profileId: profile.id, name: "React", category: "FRAMEWORK", proficiency: "ADVANCED", yearsUsed: 3 },
+          { profileId: profile.id, name: "TypeScript", category: "LANGUAGE", proficiency: "ADVANCED", yearsUsed: 3 },
+          { profileId: profile.id, name: "Next.js", category: "FRAMEWORK", proficiency: "ADVANCED", yearsUsed: 2 },
+          { profileId: profile.id, name: "Node.js", category: "FRAMEWORK", proficiency: "INTERMEDIATE", yearsUsed: 3 },
+          { profileId: profile.id, name: "PostgreSQL", category: "DATABASE", proficiency: "INTERMEDIATE", yearsUsed: 2 },
+          { profileId: profile.id, name: "Python", category: "LANGUAGE", proficiency: "INTERMEDIATE", yearsUsed: 2 },
+        ],
+        skipDuplicates: true,
+      });
+
+      profile = await prisma.profile.findUnique({
+        where: { userId },
+        include: { skills: true, targetCompanies: true },
+      });
     }
 
-    const keywords = profile.targetRoles.length > 0 ? profile.targetRoles : ["Software Engineer", "Frontend Developer"];
+    if (!profile) {
+      return { success: false, totalFetched: 0, newImported: 0, duplicates: 0, filteredOut: 0, error: "Failed to initialize profile" };
+    }
+
+    const keywords =
+      profile.targetRoles && profile.targetRoles.length > 0
+        ? profile.targetRoles
+        : ["Software Engineer", "Frontend Developer", "Full Stack Developer"];
+
     const allFetchedJobs: NormalizedJob[] = [];
 
     // 1. Fetch Aggregators (RemoteOK, Himalayas, Arbeitnow)
     if (sources?.aggregators !== false) {
-      const aggJobs = await fetchAllAggregatorJobs(keywords);
+      const aggJobs = await fetchAllAggregatorJobs(["Software", "Developer", "Engineer", "React", "Frontend", "Backend"]);
       allFetchedJobs.push(...aggJobs);
     }
 
@@ -58,9 +102,13 @@ export async function runAutoScrapeAction(sources?: {
     }
 
     // 3. Fetch Target Company ATS Boards
-    if (sources?.targetCompanies !== false && profile.targetCompanies.length > 0) {
-      for (const comp of profile.targetCompanies.slice(0, 5)) {
-        const slug = comp.name.toLowerCase().replace(/[^a-z0-9]/g, "");
+    if (sources?.targetCompanies !== false) {
+      const targetCompanySlugs =
+        profile.targetCompanies && profile.targetCompanies.length > 0
+          ? profile.targetCompanies.map((c) => c.name.toLowerCase().replace(/[^a-z0-9]/g, ""))
+          : ["stripe", "vercel", "ramp", "datadog", "figma"];
+
+      for (const slug of targetCompanySlugs.slice(0, 5)) {
         const [gh, lev] = await Promise.all([
           fetchGreenhouseJobs(slug),
           fetchLeverJobs(slug),
