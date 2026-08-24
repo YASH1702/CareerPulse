@@ -8,7 +8,7 @@ import { fetchGreenhouseJobs, fetchLeverJobs } from "@/lib/jobs/sources/ats-boar
 import { generateJobHash } from "@/utils/hash";
 import { evaluateJobPreFilters } from "@/lib/jobs/filter";
 import { calculateKeywordOverlap } from "@/lib/scoring/rank";
-import { getScraperLocationQuery, isLocationMatchingIndia, isRoleMatchingTargets } from "@/lib/jobs/locations";
+import { getScraperLocationQuery, getScraperSearchQueries, isLocationMatchingIndia, isRoleMatchingTargets } from "@/lib/jobs/locations";
 import { revalidatePath } from "next/cache";
 import type { NormalizedJob } from "@/lib/jobs/sources/types";
 
@@ -105,34 +105,57 @@ export async function runAutoScrapeAction(options?: {
       allFetchedJobs.push(...aggJobs);
     }
 
-    // 2. Fetch LinkedIn Guest Jobs (Targeting Indian States / Tech Hubs)
+    // 2. Fetch LinkedIn Guest Jobs (Targeting Indian States / Multi-Hub Queries)
     if (options?.linkedin !== false) {
-      if (targetState === "all_india" || targetState === "India") {
-        // Scrape top Indian tech cities
-        const indiaLocations = ["Bengaluru, India", "Hyderabad, India", "Pune, India", "Gurgaon, India", "Remote, India"];
-        for (const loc of indiaLocations.slice(0, 3)) {
-          const liJobs = await fetchLinkedInGuestJobs(keywords[0] || "Software Engineer", loc, 10);
-          allFetchedJobs.push(...liJobs);
+      const searchQueries = getScraperSearchQueries(targetState);
+      const targetRoleKeywords = keywords.slice(0, 3);
+
+      const liPromises = [];
+      for (const loc of searchQueries.slice(0, 4)) {
+        for (const role of targetRoleKeywords) {
+          liPromises.push(fetchLinkedInGuestJobs(role, loc, 15));
         }
-      } else {
-        const liJobs = await fetchLinkedInGuestJobs(keywords[0] || "Software Engineer", locationQuery, 20);
-        allFetchedJobs.push(...liJobs);
+      }
+
+      const liResults = await Promise.allSettled(liPromises);
+      for (const res of liResults) {
+        if (res.status === "fulfilled" && Array.isArray(res.value)) {
+          allFetchedJobs.push(...res.value);
+        }
       }
     }
 
-    // 3. Fetch Target Company ATS Boards
+    // 3. Fetch Target Company ATS Boards (Greenhouse & Lever)
     if (options?.targetCompanies !== false) {
-      const targetCompanySlugs =
+      const userSlugs =
         userProfile.targetCompanies && userProfile.targetCompanies.length > 0
           ? userProfile.targetCompanies.map((c) => c.name.toLowerCase().replace(/[^a-z0-9]/g, ""))
-          : ["stripe", "vercel", "ramp", "datadog", "figma"];
+          : [];
 
-      for (const slug of targetCompanySlugs.slice(0, 5)) {
-        const [gh, lev] = await Promise.all([
+      const topIndiaTechSlugs = [
+        "razorpay", "swiggy", "meesho", "groww", "postman", "hasura", "cred",
+        "browserstack", "hackerrank", "zepto", "blinkit", "urbancompany", "nykaa",
+        "cars24", "inmobi", "zomato", "clevertap"
+      ];
+
+      const targetCompanySlugs = Array.from(new Set([...userSlugs, ...topIndiaTechSlugs]));
+
+      const atsPromises = targetCompanySlugs.slice(0, 10).map(async (slug) => {
+        const [gh, lev] = await Promise.allSettled([
           fetchGreenhouseJobs(slug),
           fetchLeverJobs(slug),
         ]);
-        allFetchedJobs.push(...gh, ...lev);
+        const list: NormalizedJob[] = [];
+        if (gh.status === "fulfilled") list.push(...gh.value);
+        if (lev.status === "fulfilled") list.push(...lev.value);
+        return list;
+      });
+
+      const atsResults = await Promise.allSettled(atsPromises);
+      for (const res of atsResults) {
+        if (res.status === "fulfilled" && Array.isArray(res.value)) {
+          allFetchedJobs.push(...res.value);
+        }
       }
     }
 

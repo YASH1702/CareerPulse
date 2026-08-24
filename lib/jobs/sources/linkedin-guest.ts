@@ -31,13 +31,14 @@ function extractSkillsFromText(text: string): string[] {
  */
 export async function fetchLinkedInGuestJobs(
   keywords = "Software Engineer",
-  location = "Remote",
-  limit = 20
+  location = "India",
+  limit = 25,
+  startOffset = 0
 ): Promise<NormalizedJob[]> {
   try {
     const searchUrl = `https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords=${encodeURIComponent(
       keywords
-    )}&location=${encodeURIComponent(location)}&f_TPR=r86400&start=0`;
+    )}&location=${encodeURIComponent(location)}&f_TPR=r604800&start=${startOffset}`;
 
     const res = await fetch(searchUrl, {
       headers: {

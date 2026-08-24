@@ -37,6 +37,70 @@ export const STATE_KEYWORD_MAP: Record<string, string[]> = {
   remote_india: ["remote", "worldwide", "global", "anywhere", "work from home", "wfh", "india"],
 };
 
+export const STATE_SEARCH_QUERIES_MAP: Record<string, string[]> = {
+  all_india: [
+    "Bengaluru, Karnataka, India",
+    "Hyderabad, Telangana, India",
+    "Pune, Maharashtra, India",
+    "Gurugram, Haryana, India",
+    "Noida, Uttar Pradesh, India",
+    "New Delhi, Delhi, India",
+    "Mumbai, Maharashtra, India",
+    "Chennai, Tamil Nadu, India",
+  ],
+  delhi_ncr: [
+    "New Delhi, Delhi, India",
+    "Gurugram, Haryana, India",
+    "Noida, Uttar Pradesh, India",
+    "Delhi NCR, India",
+  ],
+  karnataka: [
+    "Bengaluru, Karnataka, India",
+    "Bangalore, India",
+    "Mysuru, Karnataka, India",
+  ],
+  telangana: [
+    "Hyderabad, Telangana, India",
+    "Secunderabad, Telangana, India",
+    "Greater Hyderabad Area",
+  ],
+  maharashtra: [
+    "Pune, Maharashtra, India",
+    "Mumbai, Maharashtra, India",
+    "Navi Mumbai, Maharashtra, India",
+  ],
+  tamil_nadu: [
+    "Chennai, Tamil Nadu, India",
+    "Coimbatore, Tamil Nadu, India",
+  ],
+  kerala: [
+    "Kochi, Kerala, India",
+    "Trivandrum, Kerala, India",
+  ],
+  gujarat: [
+    "Ahmedabad, Gujarat, India",
+    "Gandhinagar, Gujarat, India",
+  ],
+  west_bengal: [
+    "Kolkata, West Bengal, India",
+  ],
+  rajasthan: [
+    "Jaipur, Rajasthan, India",
+  ],
+  andhra_pradesh: [
+    "Visakhapatnam, Andhra Pradesh, India",
+    "Vijayawada, Andhra Pradesh, India",
+  ],
+  punjab_haryana: [
+    "Chandigarh, India",
+    "Mohali, Punjab, India",
+  ],
+  remote_india: [
+    "Remote, India",
+    "India",
+  ],
+};
+
 export const ALL_INDIAN_LOCATIONS = [
   "india", "in", "bharat",
   "bangalore", "bengaluru", "karnataka", "mysore", "mysuru", "mangalore", "hubli", "blr",
@@ -101,6 +165,16 @@ export function getScraperLocationQuery(locationOrState = "India"): string {
     (loc) => loc.id === locationOrState || loc.state.toLowerCase() === locationOrState.toLowerCase() || loc.label.toLowerCase().includes(locationOrState.toLowerCase())
   );
   return match ? match.searchQuery : locationOrState || "India";
+}
+
+/**
+ * Returns comprehensive list of search queries for a given state or all India.
+ */
+export function getScraperSearchQueries(locationOrState = "all_india"): string[] {
+  if (STATE_SEARCH_QUERIES_MAP[locationOrState]) {
+    return STATE_SEARCH_QUERIES_MAP[locationOrState];
+  }
+  return [getScraperLocationQuery(locationOrState)];
 }
 
 /**
