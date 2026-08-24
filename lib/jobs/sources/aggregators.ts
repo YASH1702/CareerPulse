@@ -1,7 +1,7 @@
 import type { NormalizedJob } from "./types";
 import { JobSource, RemoteType, EmploymentType } from "@prisma/client";
 import { evaluateJobFreshness } from "../freshness";
-import { isLocationMatchingIndia } from "../locations";
+import { isLocationMatchingIndia, isRoleMatchingTargets } from "../locations";
 
 const COMMON_SKILLS = [
   "React", "TypeScript", "JavaScript", "Node.js", "Python", "Go", "Golang", "Rust",
@@ -64,6 +64,11 @@ export async function fetchRemoteOKJobs(keywords: string[] = []): Promise<Normal
         if (!matchesKeyword) continue;
       }
 
+      // Role target filter
+      if (!isRoleMatchingTargets(item.position || "").matches) {
+        continue;
+      }
+
       // Filter for India / Open Global Remote
       if (!isLocationMatchingIndia(item.location || "Remote").matches) {
         continue;
@@ -123,12 +128,9 @@ export async function fetchHimalayasJobs(keywords: string[] = []): Promise<Norma
       const skills = Array.isArray(item.skills) ? item.skills : [];
       const extractedSkills = Array.from(new Set([...skills, ...extractSkillsFromText(`${item.title} ${item.excerpt || ""}`)]));
 
-      if (keywords.length > 0) {
-        const matches = keywords.some((kw) =>
-          item.title.toLowerCase().includes(kw.toLowerCase()) ||
-          extractedSkills.some((s) => s.toLowerCase().includes(kw.toLowerCase()))
-        );
-        if (!matches) continue;
+      // Role target filter
+      if (!isRoleMatchingTargets(item.title || "").matches) {
+        continue;
       }
 
       // Filter for India / Open Global Remote
@@ -184,6 +186,11 @@ export async function fetchArbeitnowJobs(): Promise<NormalizedJob[]> {
 
     for (const item of data.data.slice(0, 25)) {
       if (!item.title || !item.company_name) continue;
+
+      // Role target filter
+      if (!isRoleMatchingTargets(item.title || "").matches) {
+        continue;
+      }
 
       // Filter for India / Open Global Remote
       if (!isLocationMatchingIndia(item.location || "").matches) {

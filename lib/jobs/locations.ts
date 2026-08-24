@@ -58,13 +58,39 @@ export const ALL_INDIAN_LOCATIONS = [
 ];
 
 export const FOREIGN_RESTRICTED_KEYWORDS = [
-  "us only", "usa only", "united states", "u.s. only", "north america only",
-  "emea only", "europe only", "uk only", "canada only", "latam only",
-  "san francisco", "new york", "austin, tx", "seattle, wa", "boston, ma",
-  "chicago, il", "los angeles", "california, us", "texas, us", "washington, us",
-  "london, uk", "berlin, germany", "munich, germany", "toronto, canada",
-  "vancouver, canada", "sydney, australia", "melbourne, australia",
-  "dublin, ireland", "amsterdam, netherlands", "paris, france", "tokyo, japan"
+  // Countries & Continents
+  "usa", "united states", "u.s.", "north america", "canada", "mexico", "brazil", "latam",
+  "uk", "u.k.", "united kingdom", "england", "scotland", "britain", "london",
+  "germany", "deutschland", "berlin", "munich", "frankfurt", "dach",
+  "france", "paris", "spain", "madrid", "barcelona", "italy", "rome", "milan",
+  "ireland", "dublin", "netherlands", "amsterdam", "holland",
+  "poland", "warsaw", "krakow", "sweden", "stockholm", "switzerland", "zurich", "geneva", "austria", "vienna",
+  "australia", "sydney", "melbourne", "brisbane", "new zealand", "auckland",
+  "singapore", "japan", "tokyo", "europe", "emea", "nordics",
+  // US States & Cities
+  "maryland", "virginia", "washington", "florida", "north carolina", "south carolina",
+  "georgia", "illinois", "california", "texas", "colorado", "massachusetts", "new york",
+  "district of columbia", "fed", "tennessee", "minnesota", "ontario", "quebec", "toronto", "vancouver",
+  "san francisco", "austin", "seattle", "chicago", "boston", "atlanta", "denver", "los angeles",
+  "us-", "ca-", "uk-", "de-", "fr-", "us remote", "canada remote", "uk remote", "europe remote"
+];
+
+export const NON_ENGINEERING_ROLES = [
+  "account executive", "sales executive", "sales engineer", "partner manager", "sales specialist",
+  "sales manager", "risk strategist", "compliance", "product marketing", "marketing manager",
+  "product counsel", "legal counsel", "tax", "payroll", "filing specialist", "credit risk",
+  "underwriter", "recruiter", "human resources", "talent acquisition", "office manager",
+  "executive assistant", "financial analyst", "bookkeeper", "copywriter", "content manager",
+  "customer support", "customer success", "sales representative", "bdr", "sdr", "business development",
+  "account manager", "commercial counsel", "head of marketing", "head of sales", "claims", "insurance"
+];
+
+export const ENGINEERING_TARGET_KEYWORDS = [
+  "software", "developer", "engineer", "full stack", "fullstack", "frontend", "front-end",
+  "backend", "back-end", "web developer", "react", "typescript", "javascript", "node",
+  "python", "golang", "go engineer", "rust", "java", "devops", "cloud engineer",
+  "sre", "platform engineer", "data engineer", "ai engineer", "machine learning",
+  "mobile developer", "ios", "android", "tech lead", "technical lead", "architect", "programmer", "qa engineer", "sdet"
 ];
 
 /**
@@ -75,6 +101,39 @@ export function getScraperLocationQuery(locationOrState = "India"): string {
     (loc) => loc.id === locationOrState || loc.state.toLowerCase() === locationOrState.toLowerCase() || loc.label.toLowerCase().includes(locationOrState.toLowerCase())
   );
   return match ? match.searchQuery : locationOrState || "India";
+}
+
+/**
+ * Validates whether a job title matches target engineering / software roles and rejects non-engineering roles.
+ */
+export function isRoleMatchingTargets(
+  jobTitle: string = "",
+  userTargetRoles: string[] = []
+): { matches: boolean; reason?: string } {
+  const title = (jobTitle || "").toLowerCase().trim();
+
+  // 1. Strict Exclusions: Non-engineering roles (Sales, Marketing, HR, Legal, Tax, Support)
+  const isExcludedRole = NON_ENGINEERING_ROLES.some((role) => {
+    const pattern = new RegExp(`(?:^|[^a-z0-9])${role}(?:$|[^a-z0-9])`, "i");
+    return pattern.test(title);
+  });
+
+  if (isExcludedRole) {
+    return { matches: false, reason: `Role "${jobTitle}" is a non-technical role` };
+  }
+
+  // 2. Target Role Overlap check
+  const activeTargets = userTargetRoles.length > 0 ? userTargetRoles : ENGINEERING_TARGET_KEYWORDS;
+  const matchesTarget = activeTargets.some((target) => {
+    const norm = target.toLowerCase().trim();
+    return title.includes(norm) || norm.includes(title);
+  }) || ENGINEERING_TARGET_KEYWORDS.some((kw) => title.includes(kw));
+
+  if (!matchesTarget) {
+    return { matches: false, reason: `Role "${jobTitle}" does not match target technical roles` };
+  }
+
+  return { matches: true };
 }
 
 /**
@@ -91,20 +150,25 @@ export function isLocationMatchingIndia(
     return { matches: true };
   }
 
-  // 1. Strict Foreign Exclusions: If strictly restricted to foreign region without India
-  const isForeignRestricted = FOREIGN_RESTRICTED_KEYWORDS.some((foreign) => loc.includes(foreign));
+  // Check if explicit Indian city / state / India keyword is present
   const hasIndiaKeyword = ALL_INDIAN_LOCATIONS.some((ind) => {
     const pattern = new RegExp(`(?:^|[^a-z0-9])${ind}(?:$|[^a-z0-9])`, "i");
     return pattern.test(loc);
   });
 
+  // Check if foreign restriction keywords are present
+  const isForeignRestricted = FOREIGN_RESTRICTED_KEYWORDS.some((foreign) => {
+    const pattern = new RegExp(`(?:^|[^a-z0-9])${foreign}(?:$|[^a-z0-9])`, "i");
+    return pattern.test(loc);
+  });
+
+  // If it mentions foreign countries/states and DOES NOT explicitly specify India
   if (isForeignRestricted && !hasIndiaKeyword) {
     return { matches: false, reason: `Location "${jobLocation}" is restricted to foreign region outside India` };
   }
 
-  // 2. If it explicitly matches an Indian city/state or India
+  // If it explicitly matches an Indian city/state or India
   if (hasIndiaKeyword) {
-    // If user picked a specific state filter, check state match
     if (selectedState && selectedState !== "all_india" && selectedState !== "India") {
       const stateKeywords = STATE_KEYWORD_MAP[selectedState] || [];
       const matchesSelectedState = stateKeywords.some((kw) => {
@@ -112,8 +176,11 @@ export function isLocationMatchingIndia(
         return pattern.test(loc);
       });
 
-      // Also allow pure "India" or "Remote" as fallback
-      const isGeneralIndiaOrRemote = loc === "india" || loc.includes("remote") || loc.includes("anywhere") || loc.includes("worldwide");
+      const isGeneralIndiaOrRemote =
+        loc === "india" ||
+        loc.includes("remote") ||
+        loc.includes("anywhere") ||
+        loc.includes("worldwide");
 
       if (!matchesSelectedState && !isGeneralIndiaOrRemote) {
         return { matches: false, reason: `Location "${jobLocation}" does not match selected state: ${selectedState}` };
@@ -122,19 +189,18 @@ export function isLocationMatchingIndia(
     return { matches: true };
   }
 
-  // 3. Open Global Remote (e.g., "Remote", "Worldwide", "Anywhere", "Work from Anywhere")
-  const isGlobalRemote =
-    loc.includes("remote") ||
-    loc.includes("worldwide") ||
-    loc.includes("anywhere") ||
-    loc.includes("global") ||
-    loc.includes("apac") ||
-    loc.includes("wfh");
+  // Pure open remote (e.g. "Remote", "Worldwide", "Anywhere", "Global Remote") WITHOUT foreign country names
+  const isPureOpenRemote =
+    (loc === "remote" ||
+      loc.includes("worldwide") ||
+      loc.includes("anywhere") ||
+      loc.includes("work from anywhere") ||
+      loc.includes("global remote")) &&
+    !isForeignRestricted;
 
-  if (isGlobalRemote) {
+  if (isPureOpenRemote) {
     return { matches: true };
   }
 
-  // Otherwise, if it's an unrecognized on-site foreign city (e.g. "Berlin", "London", "Austin")
   return { matches: false, reason: `Location "${jobLocation}" is not in India or open remote` };
 }

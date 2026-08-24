@@ -8,7 +8,7 @@ import { fetchGreenhouseJobs, fetchLeverJobs } from "@/lib/jobs/sources/ats-boar
 import { generateJobHash } from "@/utils/hash";
 import { evaluateJobPreFilters } from "@/lib/jobs/filter";
 import { calculateKeywordOverlap } from "@/lib/scoring/rank";
-import { getScraperLocationQuery, isLocationMatchingIndia } from "@/lib/jobs/locations";
+import { getScraperLocationQuery, isLocationMatchingIndia, isRoleMatchingTargets } from "@/lib/jobs/locations";
 import { revalidatePath } from "next/cache";
 import type { NormalizedJob } from "@/lib/jobs/sources/types";
 
@@ -167,12 +167,18 @@ export async function runAutoScrapeAction(options?: {
         userProfile
       );
 
+      // Check Role Relevance (Reject Non-Tech/Sales/Marketing Roles)
+      const roleCheck = isRoleMatchingTargets(job.title, keywords);
+
       // Check India / State Location Filter
       const locationCheck = isLocationMatchingIndia(job.location || "", targetState);
       let isFiltered = filterResult.isFiltered;
       let filterReason = filterResult.filterReason;
 
-      if (!locationCheck.matches) {
+      if (!roleCheck.matches) {
+        isFiltered = true;
+        filterReason = roleCheck.reason || "Role does not match target technical positions";
+      } else if (!locationCheck.matches) {
         isFiltered = true;
         filterReason = locationCheck.reason || "Location outside India target";
       }

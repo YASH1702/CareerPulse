@@ -1,7 +1,7 @@
 import type { NormalizedJob } from "./types";
 import { JobSource, RemoteType, EmploymentType } from "@prisma/client";
 import { evaluateJobFreshness } from "../freshness";
-import { isLocationMatchingIndia } from "../locations";
+import { isLocationMatchingIndia, isRoleMatchingTargets } from "../locations";
 
 /**
  * Fetch jobs from a company's public Greenhouse board
@@ -20,7 +20,9 @@ export async function fetchGreenhouseJobs(companySlug: string): Promise<Normaliz
     return data.jobs
       .filter((j: { location?: { name?: string }; title?: string }) => {
         const loc = j.location?.name || "";
-        return isLocationMatchingIndia(loc).matches;
+        const roleCheck = isRoleMatchingTargets(j.title || "");
+        const locCheck = isLocationMatchingIndia(loc);
+        return roleCheck.matches && locCheck.matches;
       })
       .map((j: {
         id: number;
@@ -73,7 +75,9 @@ export async function fetchLeverJobs(companySlug: string): Promise<NormalizedJob
     return data
       .filter((j: { categories?: { location?: string }; text?: string }) => {
         const loc = j.categories?.location || "";
-        return isLocationMatchingIndia(loc).matches;
+        const roleCheck = isRoleMatchingTargets(j.text || "");
+        const locCheck = isLocationMatchingIndia(loc);
+        return roleCheck.matches && locCheck.matches;
       })
       .map((j: {
         id: string;
