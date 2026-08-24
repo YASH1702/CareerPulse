@@ -35,6 +35,8 @@ export async function updateAutoApplyConfigAction(data: {
   mode: AutoApplyMode;
   minMatchScore: number;
   maxDailyApplies: number;
+  targetCountry?: string;
+  targetStates?: string[];
   enableLinkedIn?: boolean;
   enableGreenhouse?: boolean;
   enableLever?: boolean;

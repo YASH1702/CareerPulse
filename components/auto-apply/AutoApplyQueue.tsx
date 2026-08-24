@@ -26,6 +26,8 @@ export function AutoApplyQueue({ initialQueue }: Props) {
   const [isScraping, setIsScraping] = useState(false);
   const [scrapeResult, setScrapeResult] = useState<SourcingResult | null>(null);
 
+  const [selectedState, setSelectedState] = useState("all_india");
+
   const handleApplySingle = async (jobId: string) => {
     setProcessingId(jobId);
     const res = await executeAutoApplyForJobAction(jobId);
@@ -43,7 +45,7 @@ export function AutoApplyQueue({ initialQueue }: Props) {
     setIsScraping(true);
     setScrapeResult(null);
     try {
-      const res = await runAutoScrapeAction();
+      const res = await runAutoScrapeAction({ selectedState });
       setScrapeResult(res);
       const freshQueue = await getAutoApplyQueueAction();
       setQueue(freshQueue as unknown as QueuedJob[]);
@@ -65,25 +67,48 @@ export function AutoApplyQueue({ initialQueue }: Props) {
   return (
     <div className="space-y-6">
       {/* Action Header */}
-      <div className="glass-card p-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+      <div className="glass-card p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <h3 className="font-semibold text-white text-sm flex items-center gap-2">
             <Zap size={16} className="text-blue-400" />
             <span>Auto-Apply Live Candidate Queue ({queue.length} Ready)</span>
           </h3>
           <p className="text-xs text-slate-400 mt-0.5">
-            Top-matching roles with pre-generated tailored resumes ready for submission.
+            Targeting India &amp; top Indian state tech hubs (Bangalore, Hyderabad, Pune, Delhi NCR, Remote).
           </p>
         </div>
 
-        <button
-          onClick={handleRunScraper}
-          disabled={isScraping}
-          className="btn-primary text-xs flex items-center gap-2"
-        >
-          {isScraping ? <Loader2 size={13} className="animate-spin" /> : <Play size={13} />}
-          <span>{isScraping ? "Scraping 50+ Sources..." : "Run Multi-Source Scraper Now"}</span>
-        </button>
+        <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
+          {/* State / City Selector */}
+          <div className="flex items-center gap-1.5 bg-slate-900/80 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white">
+            <MapPin size={13} className="text-blue-400 shrink-0" />
+            <select
+              value={selectedState}
+              onChange={(e) => setSelectedState(e.target.value)}
+              className="bg-transparent text-xs text-white outline-none cursor-pointer pr-1"
+            >
+              <option value="all_india" className="bg-slate-900 text-white">🇮🇳 All India (Default)</option>
+              <option value="karnataka" className="bg-slate-900 text-white">Karnataka (Bangalore)</option>
+              <option value="telangana" className="bg-slate-900 text-white">Telangana (Hyderabad)</option>
+              <option value="maharashtra" className="bg-slate-900 text-white">Maharashtra (Pune &amp; Mumbai)</option>
+              <option value="delhi_ncr" className="bg-slate-900 text-white">Delhi NCR (Gurgaon / Noida)</option>
+              <option value="tamil_nadu" className="bg-slate-900 text-white">Tamil Nadu (Chennai)</option>
+              <option value="kerala" className="bg-slate-900 text-white">Kerala (Kochi / Trivandrum)</option>
+              <option value="gujarat" className="bg-slate-900 text-white">Gujarat (Ahmedabad)</option>
+              <option value="west_bengal" className="bg-slate-900 text-white">West Bengal (Kolkata)</option>
+              <option value="remote_india" className="bg-slate-900 text-white">🌐 Remote (India &amp; Global)</option>
+            </select>
+          </div>
+
+          <button
+            onClick={handleRunScraper}
+            disabled={isScraping}
+            className="btn-primary text-xs flex items-center gap-2 shrink-0 px-4 py-2"
+          >
+            {isScraping ? <Loader2 size={13} className="animate-spin" /> : <Play size={13} />}
+            <span>{isScraping ? "Scraping India Sources..." : "Run Multi-Source Scraper Now"}</span>
+          </button>
+        </div>
       </div>
 
       {scrapeResult && (

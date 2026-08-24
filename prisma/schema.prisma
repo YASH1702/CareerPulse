@@ -450,6 +450,8 @@ model AutoApplyConfig {
   maxDailyApplies   Int           @default(15)
   todayAppliedCount Int           @default(0)
   lastResetDate     DateTime      @default(now())
+  targetCountry     String        @default("India")
+  targetStates      String[]      @default(["All India"])
   enableLinkedIn    Boolean       @default(true)
   enableGreenhouse  Boolean       @default(true)
   enableLever       Boolean       @default(true)

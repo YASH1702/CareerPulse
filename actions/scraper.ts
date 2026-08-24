@@ -8,6 +8,7 @@ import { fetchGreenhouseJobs, fetchLeverJobs } from "@/lib/jobs/sources/ats-boar
 import { generateJobHash } from "@/utils/hash";
 import { evaluateJobPreFilters } from "@/lib/jobs/filter";
 import { calculateKeywordOverlap } from "@/lib/scoring/rank";
+import { getScraperLocationQuery } from "@/lib/jobs/locations";
 import { revalidatePath } from "next/cache";
 import type { NormalizedJob } from "@/lib/jobs/sources/types";
 
@@ -20,30 +21,36 @@ export interface SourcingResult {
   error?: string;
 }
 
-export async function runAutoScrapeAction(sources?: {
+export async function runAutoScrapeAction(options?: {
   linkedin?: boolean;
   aggregators?: boolean;
   targetCompanies?: boolean;
+  selectedState?: string;
 }): Promise<SourcingResult> {
   try {
     const userId = await getRequiredUserId();
 
-    let profile = await prisma.profile.findUnique({
-      where: { userId },
-      include: {
-        skills: true,
-        targetCompanies: true,
-      },
-    });
+    const [profile, config] = await Promise.all([
+      prisma.profile.findUnique({
+        where: { userId },
+        include: {
+          skills: true,
+          targetCompanies: true,
+        },
+      }),
+      prisma.autoApplyConfig.findUnique({ where: { userId } }),
+    ]);
 
-    if (!profile) {
-      profile = await prisma.profile.create({
+    let userProfile = profile;
+
+    if (!userProfile) {
+      userProfile = await prisma.profile.create({
         data: {
           userId,
           headline: "Full Stack Engineer",
           currentRole: "Software Engineer",
           targetRoles: ["Software Engineer", "Frontend Developer", "Full Stack Developer", "Backend Developer"],
-          preferredLocations: ["Remote", "Bangalore", "Hyderabad", "Pune"],
+          preferredLocations: ["India", "Bangalore", "Hyderabad", "Pune", "Remote"],
           remotePreference: "OPEN",
           salaryMin: 1200000,
           salaryMax: 3500000,
@@ -60,52 +67,63 @@ export async function runAutoScrapeAction(sources?: {
       // Add default skills
       await prisma.skill.createMany({
         data: [
-          { profileId: profile.id, name: "React", category: "FRAMEWORK", proficiency: "ADVANCED", yearsUsed: 3 },
-          { profileId: profile.id, name: "TypeScript", category: "LANGUAGE", proficiency: "ADVANCED", yearsUsed: 3 },
-          { profileId: profile.id, name: "Next.js", category: "FRAMEWORK", proficiency: "ADVANCED", yearsUsed: 2 },
-          { profileId: profile.id, name: "Node.js", category: "FRAMEWORK", proficiency: "INTERMEDIATE", yearsUsed: 3 },
-          { profileId: profile.id, name: "PostgreSQL", category: "DATABASE", proficiency: "INTERMEDIATE", yearsUsed: 2 },
-          { profileId: profile.id, name: "Python", category: "LANGUAGE", proficiency: "INTERMEDIATE", yearsUsed: 2 },
+          { profileId: userProfile.id, name: "React", category: "FRAMEWORK", proficiency: "ADVANCED", yearsUsed: 3 },
+          { profileId: userProfile.id, name: "TypeScript", category: "LANGUAGE", proficiency: "ADVANCED", yearsUsed: 3 },
+          { profileId: userProfile.id, name: "Next.js", category: "FRAMEWORK", proficiency: "ADVANCED", yearsUsed: 2 },
+          { profileId: userProfile.id, name: "Node.js", category: "FRAMEWORK", proficiency: "INTERMEDIATE", yearsUsed: 3 },
+          { profileId: userProfile.id, name: "PostgreSQL", category: "DATABASE", proficiency: "INTERMEDIATE", yearsUsed: 2 },
+          { profileId: userProfile.id, name: "Python", category: "LANGUAGE", proficiency: "INTERMEDIATE", yearsUsed: 2 },
         ],
         skipDuplicates: true,
       });
 
-      profile = await prisma.profile.findUnique({
+      userProfile = await prisma.profile.findUnique({
         where: { userId },
         include: { skills: true, targetCompanies: true },
       });
     }
 
-    if (!profile) {
+    if (!userProfile) {
       return { success: false, totalFetched: 0, newImported: 0, duplicates: 0, filteredOut: 0, error: "Failed to initialize profile" };
     }
 
     const keywords =
-      profile.targetRoles && profile.targetRoles.length > 0
-        ? profile.targetRoles
+      userProfile.targetRoles && userProfile.targetRoles.length > 0
+        ? userProfile.targetRoles
         : ["Software Engineer", "Frontend Developer", "Full Stack Developer"];
+
+    // Location query setup (Default to India)
+    const targetState = options?.selectedState || config?.targetStates?.[0] || "all_india";
+    const locationQuery = getScraperLocationQuery(targetState);
 
     const allFetchedJobs: NormalizedJob[] = [];
 
     // 1. Fetch Aggregators (RemoteOK, Himalayas, Arbeitnow)
-    if (sources?.aggregators !== false) {
+    if (options?.aggregators !== false) {
       const aggJobs = await fetchAllAggregatorJobs(["Software", "Developer", "Engineer", "React", "Frontend", "Backend"]);
       allFetchedJobs.push(...aggJobs);
     }
 
-    // 2. Fetch LinkedIn Guest Jobs
-    if (sources?.linkedin !== false) {
-      for (const role of keywords.slice(0, 2)) {
-        const liJobs = await fetchLinkedInGuestJobs(role, profile.location || "Remote", 15);
+    // 2. Fetch LinkedIn Guest Jobs (Targeting Indian States / Tech Hubs)
+    if (options?.linkedin !== false) {
+      if (targetState === "all_india" || targetState === "India") {
+        // Scrape top Indian tech cities
+        const indiaLocations = ["Bengaluru, India", "Hyderabad, India", "Pune, India", "Gurgaon, India", "Remote, India"];
+        for (const loc of indiaLocations.slice(0, 3)) {
+          const liJobs = await fetchLinkedInGuestJobs(keywords[0] || "Software Engineer", loc, 10);
+          allFetchedJobs.push(...liJobs);
+        }
+      } else {
+        const liJobs = await fetchLinkedInGuestJobs(keywords[0] || "Software Engineer", locationQuery, 20);
         allFetchedJobs.push(...liJobs);
       }
     }
 
     // 3. Fetch Target Company ATS Boards
-    if (sources?.targetCompanies !== false) {
+    if (options?.targetCompanies !== false) {
       const targetCompanySlugs =
-        profile.targetCompanies && profile.targetCompanies.length > 0
-          ? profile.targetCompanies.map((c) => c.name.toLowerCase().replace(/[^a-z0-9]/g, ""))
+        userProfile.targetCompanies && userProfile.targetCompanies.length > 0
+          ? userProfile.targetCompanies.map((c) => c.name.toLowerCase().replace(/[^a-z0-9]/g, ""))
           : ["stripe", "vercel", "ramp", "datadog", "figma"];
 
       for (const slug of targetCompanySlugs.slice(0, 5)) {

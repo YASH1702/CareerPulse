@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Zap, Shield, Sliders, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import { Zap, Shield, Sliders, CheckCircle2, AlertCircle, Loader2, MapPin } from "lucide-react";
 import { updateAutoApplyConfigAction } from "@/actions/auto-apply";
+import { INDIA_LOCATION_OPTIONS } from "@/lib/jobs/locations";
 import type { AutoApplyConfig, AutoApplyMode } from "@prisma/client";
 
 interface Props {
@@ -14,8 +15,25 @@ export function AutoApplySettings({ initialConfig }: Props) {
   const [mode, setMode] = useState<AutoApplyMode>(initialConfig.mode);
   const [minMatchScore, setMinMatchScore] = useState(initialConfig.minMatchScore);
   const [maxDailyApplies, setMaxDailyApplies] = useState(initialConfig.maxDailyApplies);
+  const [selectedStates, setSelectedStates] = useState<string[]>(
+    initialConfig.targetStates?.length ? initialConfig.targetStates : ["all_india"]
+  );
   const [isSaving, setIsSaving] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+
+  const toggleState = (stateId: string) => {
+    if (stateId === "all_india") {
+      setSelectedStates(["all_india"]);
+      return;
+    }
+    const filtered = selectedStates.filter((s) => s !== "all_india");
+    if (filtered.includes(stateId)) {
+      const next = filtered.filter((s) => s !== stateId);
+      setSelectedStates(next.length === 0 ? ["all_india"] : next);
+    } else {
+      setSelectedStates([...filtered, stateId]);
+    }
+  };
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -26,6 +44,8 @@ export function AutoApplySettings({ initialConfig }: Props) {
       mode,
       minMatchScore,
       maxDailyApplies,
+      targetCountry: "India",
+      targetStates: selectedStates,
       enableLinkedIn: true,
       enableGreenhouse: true,
       enableLever: true,
@@ -166,6 +186,38 @@ export function AutoApplySettings({ initialConfig }: Props) {
           <p className="text-[10px] text-slate-500">
             Current today's count: {initialConfig.todayAppliedCount} applied.
           </p>
+        </div>
+      </div>
+
+      {/* Target Location / Indian States */}
+      <div className="space-y-3 pt-2 border-t border-white/[0.06]">
+        <div className="flex items-center justify-between">
+          <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+            <MapPin size={13} className="text-blue-400" />
+            <span>🇮🇳 Target Sourcing Geography (Default: India)</span>
+          </label>
+          <span className="text-[10px] text-blue-400 font-medium">Auto-targeted during multi-source scraping</span>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          {INDIA_LOCATION_OPTIONS.map((loc) => {
+            const isSelected = selectedStates.includes(loc.id);
+            return (
+              <button
+                key={loc.id}
+                type="button"
+                onClick={() => toggleState(loc.id)}
+                className={`text-xs px-3 py-1.5 rounded-lg border transition-all flex items-center gap-1.5 ${
+                  isSelected
+                    ? "bg-blue-600/20 border-blue-500/50 text-blue-300 font-semibold"
+                    : "bg-white/[0.02] border-white/[0.08] text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]"
+                }`}
+              >
+                {isSelected && <CheckCircle2 size={12} className="text-blue-400" />}
+                <span>{loc.label}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
