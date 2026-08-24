@@ -11,7 +11,7 @@ interface Props {
   initialJobs: Array<Job & {
     aiAnalysis?: {
       matchScore: number;
-      category: string;
+      category?: string;
       recommendation: string;
       strengths: string[];
       missingSkills: string[];

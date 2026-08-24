@@ -27,7 +27,6 @@ export async function getAnalyticsData() {
       select: {
         id: true,
         appStatus: true,
-        matchScore: true,
         appliedAt: true,
         createdAt: true,
       },

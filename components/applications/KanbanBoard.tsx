@@ -16,10 +16,66 @@ import {
 import { updateApplicationStatusAction, getApplications } from "@/actions/applications";
 import { ResumeTailorModal } from "@/components/resume/ResumeTailorModal";
 import { CoverLetterModal } from "@/components/applications/CoverLetterModal";
+import { InterviewPrepModal } from "@/components/jobs/InterviewPrepModal";
 import { formatRelativeDate } from "@/utils/format";
 import type { ApplicationStatus } from "@prisma/client";
 
-type ApplicationWithDetails = Awaited<ReturnType<typeof getApplications>>[number];
+export interface ApplicationWithDetails {
+  id: string;
+  userId: string;
+  jobId: string;
+  resumeId: string | null;
+  appStatus: ApplicationStatus;
+  appliedAt: Date | null;
+  followUpDueAt: Date | null;
+  followUpSent: boolean;
+  followUpCount: number;
+  notes: string | null;
+  coverLetterText: string | null;
+  tailoredResumeId: string | null;
+  tailoredSummary: string | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  tailoredSkills: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  tailoredExp: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  stageHistory: any;
+  contactName: string | null;
+  contactEmail: string | null;
+  contactRole: string | null;
+  submissionProof: string | null;
+  salaryOffered: number | null;
+  salaryCurrency: string;
+  offerDeadline: Date | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  offerDetails: any;
+  rejectionReason: string | null;
+  feedback: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  job: {
+    id: string;
+    title: string;
+    companyName: string;
+    location: string | null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    remoteType: any;
+    salaryText: string | null;
+    applicationUrl: string | null;
+    matchScore: number | null;
+  };
+  resume?: {
+    id: string;
+    name: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resumeType: any;
+    fileUrl: string | null;
+  } | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  interviews?: any[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  events?: any[];
+}
 
 interface Props {
   initialApplications: ApplicationWithDetails[];
@@ -151,6 +207,14 @@ export function KanbanBoard({ initialApplications }: Props) {
                         <Sparkles size={10} />
                         <span>{app.coverLetterText ? "Letter Ready" : "+ Cover Letter"}</span>
                       </button>
+
+                      {app.appStatus === "INTERVIEW" && (
+                        <InterviewPrepModal
+                          jobId={app.job.id}
+                          jobTitle={app.job.title}
+                          companyName={app.job.companyName}
+                        />
+                      )}
                     </div>
 
                     {/* Footer */}

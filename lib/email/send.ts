@@ -16,11 +16,10 @@ export async function sendDailyDigestEmail(params: {
   await prisma.notification.create({
     data: {
       userId,
-      notifType: "NEW_MATCHES",
+      type: "NEW_MATCHES",
       title: `Daily Digest: ${digestData.topMatches.length} Top Matches`,
       message: `You have ${digestData.topMatches.length} high-match jobs today.`,
-      link: "/recommendations",
-      metadata: {
+      data: {
         topMatchesCount: digestData.topMatches.length,
         followUpsCount: digestData.pendingFollowUps.length,
       },

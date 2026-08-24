@@ -17,6 +17,7 @@ import { cn } from "@/utils/cn";
 
 const navItems = [
   { href: "/", label: "Overview", icon: LayoutDashboard, exact: true },
+  { href: "/auto-apply", label: "Auto-Apply", icon: Zap },
   { href: "/jobs", label: "Jobs", icon: Briefcase },
   { href: "/recommendations", label: "Matches", icon: Star },
   { href: "/applications", label: "Applications", icon: FileText },

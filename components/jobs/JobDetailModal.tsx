@@ -4,6 +4,8 @@ import { X, ExternalLink, Building2, MapPin, DollarSign, Calendar, Sparkles, Che
 import { formatRelativeDate } from "@/utils/format";
 import { toggleSaveJobAction, deleteJobAction } from "@/actions/jobs";
 import { AIAnalysisPanel } from "./AIAnalysisPanel";
+import { RecruiterOutreachModal } from "./RecruiterOutreachModal";
+import { InterviewPrepModal } from "./InterviewPrepModal";
 import type { Job, AIAnalysis } from "@prisma/client";
 
 interface Props {
@@ -186,9 +188,10 @@ export function JobDetailModal({ job, onClose }: Props) {
         </div>
 
         {/* Footer Actions */}
-        <div className="p-5 border-t border-white/[0.06] bg-white/[0.02] flex items-center justify-between">
-          <div className="text-xs text-slate-400">
-            Source: <span className="text-slate-200 font-medium capitalize">{job.source.toLowerCase()}</span>
+        <div className="p-5 border-t border-white/[0.06] bg-white/[0.02] flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center gap-2">
+            <RecruiterOutreachModal jobId={job.id} jobTitle={job.title} companyName={job.companyName} />
+            <InterviewPrepModal jobId={job.id} jobTitle={job.title} companyName={job.companyName} />
           </div>
           <div className="flex items-center gap-3">
             {job.applicationUrl ? (

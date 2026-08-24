@@ -10,7 +10,7 @@ interface Props {
   job: Job & {
     aiAnalysis?: {
       matchScore: number;
-      category: string;
+      category?: string;
       recommendation: string;
       strengths: string[];
       missingSkills: string[];

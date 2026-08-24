@@ -173,6 +173,64 @@ async function runAllTests() {
   );
   assert(tailoredCheck.valid === false, "Detected and blocked hallucinated company in tailored resume");
 
+  // ─── 5. Ghost Job & Freshness Analyzer ─────────
+  console.log("\n--- Test Group 5: Ghost Job & Freshness Analyzer ---");
+  const { evaluateJobFreshness } = await import("../lib/jobs/freshness");
+  
+  const freshJob = evaluateJobFreshness(new Date());
+  assert(freshJob.score === "FRESH", "Job posted today flagged as FRESH (<48h)");
+  assert(freshJob.callbackMultiplier > 3, "Fresh job provides >3x callback multiplier");
+
+  const staleDate = new Date();
+  staleDate.setDate(staleDate.getDate() - 45);
+  const staleJob = evaluateJobFreshness(staleDate, 4);
+  assert(staleJob.score === "STALE_GHOST", "Job posted 45d ago with 4 reposts flagged as STALE_GHOST");
+
+  // ─── 6. Screening Question Classifier ─────────
+  console.log("\n--- Test Group 6: Screening Question Classifier ---");
+  const { classifyScreeningQuestion } = await import("../lib/auto-apply/field-classifier");
+
+  const mockProfileWithSkills = {
+    ...mockProfile,
+    skills: [
+      { id: "s1", profileId: "p1", name: "React", category: "FRAMEWORK" as const, proficiency: "ADVANCED" as const, yearsUsed: 3 },
+      { id: "s2", profileId: "p1", name: "TypeScript", category: "LANGUAGE" as const, proficiency: "ADVANCED" as const, yearsUsed: 3 },
+    ],
+  };
+
+  const q1 = classifyScreeningQuestion("Are you legally authorized to work in India?", mockProfileWithSkills);
+  assert(q1.answer === true, "Work authorization answered as TRUE");
+
+  const q2 = classifyScreeningQuestion("Will you require visa sponsorship?", mockProfileWithSkills);
+  assert(q2.answer === false, "Visa sponsorship answered as FALSE");
+
+  const q3 = classifyScreeningQuestion("What is your notice period in days?", mockProfileWithSkills);
+  assert(q3.answer === "30 days", "Notice period answered from candidate profile");
+
+  const q4 = classifyScreeningQuestion("How many years of experience do you have with React?", mockProfileWithSkills);
+  assert(Number(q4.answer) >= 3, "React years of experience accurately mapped");
+
+  // ─── 7. Salary Benchmarking & Advisor ──────────
+  console.log("\n--- Test Group 7: Salary Benchmarking & Negotiation ---");
+  const { getSalaryBenchmark } = await import("../lib/scoring/salary-benchmark");
+
+  const salaryAdv = getSalaryBenchmark("Frontend Engineer", 2000000, 3000000, "INR", 4);
+  assert(salaryAdv.recommendedValue >= 2500000 && salaryAdv.recommendedValue <= 2800000, "Calculated 70th percentile anchor for declared salary range");
+  assert(salaryAdv.confidence === "HIGH", "Disclosed salary band has HIGH confidence");
+
+  // ─── 8. Inbound Email Classifier ──────────────
+  console.log("\n--- Test Group 8: Inbound Email Auto-Tracker ---");
+  const { classifyInboundEmail } = await import("../lib/email/classifier");
+
+  const email1 = classifyInboundEmail("Invitation to Interview: Senior Frontend Developer at Stripe", "Hi! We would love to schedule a 30-min technical screen with our team.");
+  assert(email1.category === "INTERVIEW_INVITATION", "Classified interview invitation correctly");
+
+  const email2 = classifyInboundEmail("Thank you for applying to OpenAI", "We have received your application for Software Engineer and our team is reviewing it.");
+  assert(email2.category === "APPLICATION_CONFIRMATION", "Classified application confirmation correctly");
+
+  const email3 = classifyInboundEmail("Update on your application at Acme", "Unfortunately, after careful consideration we have decided to pursue other candidates.");
+  assert(email3.category === "REJECTION", "Classified rejection email correctly");
+
   console.log("\n=========================================");
   console.log(`   🎉 ALL ${passedTests}/${totalTests} TESTS PASSED CLEANLY! `);
   console.log("=========================================\n");

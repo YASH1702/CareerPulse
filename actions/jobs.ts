@@ -68,7 +68,6 @@ export async function getJobs(filters: JobQueryFilters = {}) {
       aiAnalysis: {
         select: {
           matchScore: true,
-          category: true,
           recommendation: true,
           strengths: true,
           missingSkills: true,

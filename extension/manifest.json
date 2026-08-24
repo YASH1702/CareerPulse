@@ -1,0 +1,32 @@
+{
+  "manifest_version": 3,
+  "name": "JobPilot AI — Auto-Apply & Scraper Co-Pilot",
+  "version": "1.0.0",
+  "description": "Autonomous co-pilot that scrapes jobs and auto-fills LinkedIn Easy Apply & Naukri applications using your JobPilot profile.",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://www.linkedin.com/*",
+    "https://*.naukri.com/*",
+    "http://localhost:3000/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "JobPilot AI Co-Pilot"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.linkedin.com/jobs/*"],
+      "js": ["content-scripts/linkedin-easy-apply.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://www.naukri.com/*"],
+      "js": ["content-scripts/naukri-apply.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

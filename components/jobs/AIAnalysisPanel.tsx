@@ -80,7 +80,7 @@ export function AIAnalysisPanel({ jobId, analysis, matchScore, onAnalysisUpdated
           <div>
             <div className="flex items-center gap-2">
               <h4 className="text-sm font-semibold text-white">
-                {analysis?.category ? `${analysis.category.charAt(0) + analysis.category.slice(1).toLowerCase()} Match` : "Match Rating"}
+                {(score ?? 0) >= 80 ? "Strong Match" : (score ?? 0) >= 65 ? "Good Match" : "Moderate Match"}
               </h4>
               <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${
                 analysis?.recommendation === "APPLY" ? "bg-emerald-500/20 text-emerald-300" :

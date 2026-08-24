@@ -7,24 +7,27 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String    @unique
-  emailVerified DateTime?
-  image         String?
-  password      String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  accounts      Account[]
-  sessions      Session[]
-  profile       Profile?
-  resumes       Resume[]
-  jobs          Job[]
-  applications  Application[]
-  notifications Notification[]
-  jobAlerts     JobAlert[]
-  companies     Company[]
-  skillGaps     SkillGap[]
+  id               String           @id @default(cuid())
+  name             String?
+  email            String           @unique
+  emailVerified    DateTime?
+  image            String?
+  password         String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  accounts         Account[]
+  sessions         Session[]
+  profile          Profile?
+  resumes          Resume[]
+  jobs             Job[]
+  applications     Application[]
+  notifications    Notification[]
+  jobAlerts        JobAlert[]
+  companies        Company[]
+  skillGaps        SkillGap[]
+  autoApplyConfig  AutoApplyConfig?
+  autoApplyJobs    AutoApplyJob[]
+
   @@map("users")
 }
 
@@ -42,6 +45,7 @@ model Account {
   id_token          String? @db.Text
   session_state     String?
   user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@unique([provider, providerAccountId])
   @@map("accounts")
 }
@@ -52,6 +56,7 @@ model Session {
   userId       String
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@map("sessions")
 }
 
@@ -59,6 +64,7 @@ model VerificationToken {
   identifier String
   token      String   @unique
   expires    DateTime
+
   @@unique([identifier, token])
   @@map("verification_tokens")
 }
@@ -99,6 +105,7 @@ model Profile {
   education           Education[]
   certifications      Certification[]
   targetCompanies     TargetCompany[]
+
   @@map("profiles")
 }
 
@@ -107,34 +114,39 @@ model Skill {
   profileId   String
   profile     Profile       @relation(fields: [profileId], references: [id], onDelete: Cascade)
   name        String
-  category    SkillCategory
+  category    SkillCategory @default(OTHER)
   proficiency SkillLevel    @default(INTERMEDIATE)
   yearsUsed   Int?
+
   @@unique([profileId, name])
   @@map("skills")
 }
 
 model Education {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   profileId   String
-  profile     Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  profile     Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
   institution String
   degree      String
   field       String?
   startYear   Int?
   endYear     Int?
   grade       String?
+
   @@map("education")
 }
 
 model Certification {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   profileId String
-  profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  profile   Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
   name      String
-  issuer    String?
-  year      Int?
+  issuer    String
+  issueDate DateTime?
+  expiryDate DateTime?
+  credentialId String?
   url       String?
+
   @@map("certifications")
 }
 
@@ -144,37 +156,42 @@ model TargetCompany {
   profile   Profile          @relation(fields: [profileId], references: [id], onDelete: Cascade)
   name      String
   sentiment CompanySentiment @default(NEUTRAL)
+  notes     String?          @db.Text
+
+  @@unique([profileId, name])
   @@map("target_companies")
 }
 
 model Resume {
-  id             String     @id @default(cuid())
+  id             String        @id @default(cuid())
   userId         String
-  user           User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   name           String
-  resumeType     ResumeType @default(MASTER)
+  resumeType     ResumeType    @default(MASTER)
   parentId       String?
-  parent         Resume?    @relation("ResumeVersions", fields: [parentId], references: [id])
-  versions       Resume[]   @relation("ResumeVersions")
+  parent         Resume?       @relation("ResumeVersions", fields: [parentId], references: [id])
+  versions       Resume[]      @relation("ResumeVersions")
   fileUrl        String?
   fileType       String?
   fileName       String?
-  summary        String?    @db.Text
+  summary        String?       @db.Text
   skills         Json?
   experience     Json?
   projects       Json?
   education      Json?
   certifications Json?
   achievements   Json?
-  rawText        String?    @db.Text
-  isActive       Boolean    @default(true)
+  rawText        String?       @db.Text
+  isActive       Boolean       @default(true)
   targetRole     String?
   atsScore       Int?
   wordCount      Int?
   description    String?
-  createdAt      DateTime   @default(now())
-  updatedAt      DateTime   @updatedAt
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
   applications   Application[]
+  autoApplyJobs  AutoApplyJob[]
+
   @@index([userId])
   @@map("resumes")
 }
@@ -194,6 +211,7 @@ model Company {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   jobs        Job[]
+
   @@unique([userId, name])
   @@map("companies")
 }
@@ -230,6 +248,8 @@ model Job {
   duplicateOfId      String?
   isFiltered         Boolean        @default(false)
   filterReason       String?
+  freshness          FreshnessScore @default(FRESH)
+  repostCount        Int            @default(0)
   datePosted         DateTime?
   dateDiscovered     DateTime       @default(now())
   expiresAt          DateTime?
@@ -244,154 +264,164 @@ model Job {
   aiAnalysis         AIAnalysis?
   sources            JobSourceRecord[]
   applications       Application[]
+  autoApplyJobs      AutoApplyJob[]
+
   @@index([userId])
   @@index([userId, matchScore])
   @@index([userId, dateDiscovered])
   @@index([companyName, title])
-  @@index([contentHash])
   @@map("jobs")
 }
 
 model JobSourceRecord {
-  id        String    @id @default(cuid())
-  jobId     String
-  job       Job       @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  source    JobSource
-  sourceUrl String?
-  sourceId  String?
-  seenAt    DateTime  @default(now())
+  id         String    @id @default(cuid())
+  jobId      String
+  job        Job       @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  source     JobSource
+  url        String?
+  externalId String?
+  rawPayload Json?
+  scrapedAt  DateTime  @default(now())
+
   @@map("job_source_records")
 }
 
 model AIAnalysis {
-  id                    String           @id @default(cuid())
-  jobId                 String           @unique
-  job                   Job              @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  matchScore            Int
-  recommendation        AIRecommendation
-  confidence            Float
-  category              MatchCategory
-  strengths             String[]
-  concerns              String[]
-  missingSkills         String[]
-  matchedRequirements   String[]
+  id                  String           @id @default(cuid())
+  jobId               String           @unique
+  job                 Job              @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  matchScore          Int
+  technicalScore      Int
+  experienceScore     Int
+  roleScore           Int
+  locationScore       Int
+  salaryScore         Int
+  growthScore         Int
+  employmentTypeScore Int              @default(100)
+  recommendation      AIRecommendation
+  confidence          Float
+  strengths           String[]
+  missingSkills       String[]
+  concerns            String[]
+  matchedRequirements String[]
   unmatchedRequirements String[]
-  whyApply              String?
-  technicalScore        Int?
-  experienceScore       Int?
-  roleScore             Int?
-  locationScore         Int?
-  salaryScore           Int?
-  employmentScore       Int?
-  growthScore           Int?
-  modelUsed             String?
-  promptTokens          Int?
-  completionTokens      Int?
-  costUsd               Float?
-  rawResponse           Json?
-  createdAt             DateTime         @default(now())
-  updatedAt             DateTime         @updatedAt
+  suggestedResumeEdits String[]
+  coverLetterKeyPoints String[]
+  whyApply            String?          @db.Text
+  analysisVersion     Int              @default(1)
+  rawPrompt           String?          @db.Text
+  rawResponse         String?          @db.Text
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+
   @@map("ai_analyses")
 }
 
 model Application {
-  id                String            @id @default(cuid())
-  userId            String
-  user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  jobId             String
-  job               Job               @relation(fields: [jobId], references: [id])
-  resumeId          String?
-  resume            Resume?           @relation(fields: [resumeId], references: [id])
-  appStatus         ApplicationStatus @default(NEW)
-  matchScore        Int?
-  tailoredResume    Json?
-  tailoredResumeUrl String?
-  coverLetterText   String?           @db.Text
-  appliedAt         DateTime?
-  appliedVia        String?
-  recruiterName     String?
-  recruiterEmail    String?
-  recruiterLinkedin String?
-  followUpDate      DateTime?
-  followUpSent      Boolean           @default(false)
-  notes             String?           @db.Text
-  isArchived        Boolean           @default(false)
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
-  events            ApplicationEvent[]
-  interviews        Interview[]
-  coverLetters      CoverLetter[]
-  @@index([userId])
-  @@index([userId, appliedAt])
+  id               String            @id @default(cuid())
+  userId           String
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobId            String
+  job              Job               @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  resumeId         String?
+  resume           Resume?           @relation(fields: [resumeId], references: [id])
+  appStatus        ApplicationStatus @default(READY)
+  appliedAt        DateTime?
+  followUpDueAt    DateTime?
+  followUpSent     Boolean           @default(false)
+  followUpCount    Int               @default(0)
+  notes            String?           @db.Text
+  coverLetterText  String?           @db.Text
+  tailoredResumeId String?
+  tailoredSummary  String?           @db.Text
+  tailoredSkills   Json?
+  tailoredExp      Json?
+  stageHistory     Json?
+  contactName      String?
+  contactEmail     String?
+  contactRole      String?
+  submissionProof  String?
+  salaryOffered    Int?
+  salaryCurrency   String            @default("INR")
+  offerDeadline    DateTime?
+  offerDetails     Json?
+  rejectionReason  String?
+  feedback         String?           @db.Text
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  events           ApplicationEvent[]
+  interviews       Interview[]
+
+  @@unique([userId, jobId])
+  @@index([userId, appStatus])
   @@map("applications")
 }
 
 model ApplicationEvent {
-  id            String      @id @default(cuid())
+  id            String   @id @default(cuid())
   applicationId String
   application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
   eventType     String
   description   String
   metadata      Json?
-  occurredAt    DateTime    @default(now())
-  @@map("application_events")
-}
+  occurredAt    DateTime @default(now())
 
-model CoverLetter {
-  id            String      @id @default(cuid())
-  applicationId String
-  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  content       String      @db.Text
-  version       Int         @default(1)
-  isSelected    Boolean     @default(false)
-  createdAt     DateTime    @default(now())
-  @@map("cover_letters")
+  @@map("application_events")
 }
 
 model Interview {
   id            String            @id @default(cuid())
   applicationId String
   application   Application       @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  interviewType InterviewType
+  interviewType InterviewType     @default(TECHNICAL)
   scheduledAt   DateTime
-  duration      Int?
+  durationMins  Int?
+  interviewer   String?
+  meetingLink   String?
   location      String?
-  meetingUrl    String?
   notes         String?           @db.Text
-  outcome       InterviewOutcome?
+  prepNotes     String?           @db.Text
+  outcome       InterviewOutcome  @default(PENDING)
+  feedback      String?           @db.Text
   createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
   @@map("interviews")
+}
+
+model JobAlert {
+  id          String         @id @default(cuid())
+  userId      String
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  keywords    String[]
+  roles       String[]
+  locations   String[]
+  remoteTypes RemoteType[]
+  salaryMin   Int?
+  frequency   AlertFrequency @default(DAILY)
+  isActive    Boolean        @default(true)
+  lastSentAt  DateTime?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@map("job_alerts")
 }
 
 model Notification {
   id        String           @id @default(cuid())
   userId    String
   user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  notifType NotificationType
+  type      NotificationType
   title     String
-  message   String
-  metadata  Json?
+  message   String           @db.Text
+  data      Json?
   isRead    Boolean          @default(false)
-  link      String?
+  readAt    DateTime?
   createdAt DateTime         @default(now())
-  @@index([userId, isRead])
-  @@index([userId, createdAt])
-  @@map("notifications")
-}
 
-model JobAlert {
-  id        String         @id @default(cuid())
-  userId    String
-  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name      String
-  frequency AlertFrequency @default(DAILY)
-  isActive  Boolean        @default(true)
-  lastRunAt DateTime?
-  nextRunAt DateTime?
-  config    Json
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
-  @@map("job_alerts")
+  @@index([userId, isRead])
+  @@map("notifications")
 }
 
 model SkillGap {
@@ -405,8 +435,52 @@ model SkillGap {
   category   String?
   computedAt DateTime @default(now())
   updatedAt  DateTime @updatedAt
+
   @@unique([userId, skill])
   @@map("skill_gaps")
+}
+
+model AutoApplyConfig {
+  id                String        @id @default(cuid())
+  userId            String        @unique
+  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  isEnabled         Boolean       @default(false)
+  mode              AutoApplyMode @default(SEMI_AUTONOMOUS)
+  minMatchScore     Int           @default(80)
+  maxDailyApplies   Int           @default(15)
+  todayAppliedCount Int           @default(0)
+  lastResetDate     DateTime      @default(now())
+  enableLinkedIn    Boolean       @default(true)
+  enableGreenhouse  Boolean       @default(true)
+  enableLever       Boolean       @default(true)
+  enableRemoteAPIs  Boolean       @default(true)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  @@map("auto_apply_configs")
+}
+
+model AutoApplyJob {
+  id               String          @id @default(cuid())
+  userId           String
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobId            String
+  job              Job             @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  status           AutoApplyStatus @default(QUEUED)
+  tailoredResumeId String?
+  tailoredResume   Resume?         @relation(fields: [tailoredResumeId], references: [id])
+  coverLetterText  String?         @db.Text
+  recruiterMessage String?         @db.Text
+  interviewPrep    Json?
+  screeningAnswers Json?
+  errorMessage     String?
+  screenshotUrl    String?
+  submittedAt      DateTime?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  @@index([userId, status])
+  @@map("auto_apply_jobs")
 }
 
 enum EmploymentType {
@@ -436,8 +510,39 @@ enum JobSource {
   URL
   EMAIL_ALERT
   API
+  LINKEDIN
   LINKEDIN_MANUAL
+  NAUKRI
   NAUKRI_MANUAL
+  GREENHOUSE
+  LEVER
+  ASHBY
+  REMOTEOK
+  HIMALAYAS
+  WWR
+  ARBEITNOW
+}
+
+enum FreshnessScore {
+  FRESH
+  STANDARD
+  STALE_GHOST
+}
+
+enum AutoApplyStatus {
+  QUEUED
+  TAILORING
+  READY_FOR_SUBMISSION
+  SUBMITTING
+  SUBMITTED
+  FAILED
+  FLAGGED_CAPTCHA
+  MANUAL_REVIEW_REQUIRED
+}
+
+enum AutoApplyMode {
+  SEMI_AUTONOMOUS
+  FULL_AUTONOMOUS
 }
 
 enum JobStatus {

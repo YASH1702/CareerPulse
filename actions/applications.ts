@@ -16,7 +16,7 @@ export async function getApplications() {
   const userId = await getRequiredUserId();
 
   const applications = await prisma.application.findMany({
-    where: { userId, isArchived: false },
+    where: { userId },
     orderBy: { updatedAt: "desc" },
     include: {
       job: {
@@ -143,7 +143,6 @@ export async function generateCoverLetterAction(params: {
         jobId,
         coverLetterText,
         appStatus: "READY",
-        matchScore: job.matchScore,
       },
     });
   }
@@ -221,7 +220,6 @@ export async function markJobAsAppliedAction(params: {
         data: {
           appStatus: "APPLIED",
           appliedAt: new Date(),
-          appliedVia: appliedVia || "Company Website",
           notes: notes ? `${app.notes ? app.notes + "\n" : ""}${notes}` : app.notes,
         },
       }),
@@ -241,7 +239,6 @@ export async function markJobAsAppliedAction(params: {
         jobId,
         appStatus: "APPLIED",
         appliedAt: new Date(),
-        appliedVia: appliedVia || "Company Website",
         notes,
       },
     });

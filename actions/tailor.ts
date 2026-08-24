@@ -99,8 +99,12 @@ export async function saveTailoredResumeAction(
       where: { id: application.id },
       data: {
         resumeId: savedResume.id,
+        tailoredResumeId: savedResume.id,
+        tailoredSummary: tailoredData.summary || null,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        tailoredResume: tailoredData as any,
+        tailoredSkills: tailoredData.skills as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        tailoredExp: tailoredData.experience as any,
         appStatus: application.appStatus === "NEW" ? "READY" : application.appStatus,
       },
     });
@@ -110,10 +114,13 @@ export async function saveTailoredResumeAction(
         userId,
         jobId,
         resumeId: savedResume.id,
+        tailoredResumeId: savedResume.id,
+        tailoredSummary: tailoredData.summary || null,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        tailoredResume: tailoredData as any,
+        tailoredSkills: tailoredData.skills as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        tailoredExp: tailoredData.experience as any,
         appStatus: "READY",
-        matchScore: job.matchScore,
       },
     });
   }

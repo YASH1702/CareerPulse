@@ -1,0 +1,162 @@
+"use client";
+
+import { useState } from "react";
+import { Zap, Play, CheckCircle2, Loader2, ExternalLink, Sparkles, Building2, MapPin, DollarSign } from "lucide-react";
+import { executeAutoApplyForJobAction } from "@/actions/auto-apply";
+import { runAutoScrapeAction, SourcingResult } from "@/actions/scraper";
+import { RecruiterOutreachModal } from "@/components/jobs/RecruiterOutreachModal";
+import { InterviewPrepModal } from "@/components/jobs/InterviewPrepModal";
+import { formatRelativeDate } from "@/utils/format";
+import type { Job, AIAnalysis, Application } from "@prisma/client";
+
+interface QueuedJob extends Job {
+  aiAnalysis?: AIAnalysis | null;
+  applications?: Application[];
+}
+
+interface Props {
+  initialQueue: QueuedJob[];
+}
+
+export function AutoApplyQueue({ initialQueue }: Props) {
+  const [queue, setQueue] = useState<QueuedJob[]>(initialQueue);
+  const [processingId, setProcessingId] = useState<string | null>(null);
+  const [isScraping, setIsScraping] = useState(false);
+  const [scrapeResult, setScrapeResult] = useState<SourcingResult | null>(null);
+
+  const handleApplySingle = async (jobId: string) => {
+    setProcessingId(jobId);
+    const res = await executeAutoApplyForJobAction(jobId);
+    setProcessingId(null);
+
+    if (res.success) {
+      setQueue((prev) => prev.filter((j) => j.id !== jobId));
+    } else {
+      alert(res.error || "Auto-apply failed.");
+    }
+  };
+
+  const handleRunScraper = async () => {
+    setIsScraping(true);
+    setScrapeResult(null);
+    const res = await runAutoScrapeAction();
+    setIsScraping(false);
+    setScrapeResult(res);
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Action Header */}
+      <div className="glass-card p-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div>
+          <h3 className="font-semibold text-white text-sm flex items-center gap-2">
+            <Zap size={16} className="text-blue-400" />
+            <span>Auto-Apply Live Candidate Queue ({queue.length} Ready)</span>
+          </h3>
+          <p className="text-xs text-slate-400 mt-0.5">
+            Top-matching roles with pre-generated tailored resumes ready for submission.
+          </p>
+        </div>
+
+        <button
+          onClick={handleRunScraper}
+          disabled={isScraping}
+          className="btn-primary text-xs flex items-center gap-2"
+        >
+          {isScraping ? <Loader2 size={13} className="animate-spin" /> : <Play size={13} />}
+          <span>{isScraping ? "Scraping 50+ Sources..." : "Run Multi-Source Scraper Now"}</span>
+        </button>
+      </div>
+
+      {scrapeResult && (
+        <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl text-xs text-blue-300 flex items-center justify-between">
+          <span>
+            Scraped <strong>{scrapeResult.totalFetched}</strong> jobs · Imported <strong>{scrapeResult.newImported}</strong> new · Skipped <strong>{scrapeResult.duplicates}</strong> duplicates.
+          </span>
+          <button onClick={() => setScrapeResult(null)} className="text-slate-400 hover:text-white">✕</button>
+        </div>
+      )}
+
+      {/* Queue Cards */}
+      {queue.length === 0 ? (
+        <div className="glass-card p-12 text-center space-y-3">
+          <div className="w-12 h-12 rounded-2xl bg-white/[0.03] flex items-center justify-center mx-auto text-slate-500">
+            <Zap size={24} />
+          </div>
+          <h4 className="font-semibold text-white text-sm">No Jobs Currently in Auto-Apply Queue</h4>
+          <p className="text-xs text-slate-400 max-w-md mx-auto">
+            Click "Run Multi-Source Scraper Now" to automatically search LinkedIn, RemoteOK, Himalayas, and Greenhouse boards for new opportunities.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {queue.map((job) => (
+            <div
+              key={job.id}
+              className="glass-card p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
+            >
+              <div className="space-y-1.5 flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h4 className="font-semibold text-white text-sm">{job.title}</h4>
+                  <span className="text-xs font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    {job.matchScore ?? 80}% Match
+                  </span>
+                  <span className="text-[10px] px-2 py-0.5 rounded bg-white/[0.04] text-slate-400 border border-white/[0.06] capitalize">
+                    {job.source.toLowerCase()}
+                  </span>
+                  <span className="text-[10px] px-2 py-0.5 rounded bg-blue-500/10 text-blue-400">
+                    {job.freshness === "FRESH" ? "🔥 Fresh (<48h)" : "Active Window"}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-3 text-xs text-slate-400 flex-wrap">
+                  <span className="flex items-center gap-1 text-slate-300">
+                    <Building2 size={12} className="text-slate-400" />
+                    {job.companyName}
+                  </span>
+                  {job.location && (
+                    <span className="flex items-center gap-1">
+                      <MapPin size={12} />
+                      {job.location}
+                    </span>
+                  )}
+                  {job.salaryText && (
+                    <span className="flex items-center gap-1 text-emerald-400 font-medium">
+                      <DollarSign size={12} />
+                      {job.salaryText}
+                    </span>
+                  )}
+                </div>
+
+                {job.aiAnalysis?.whyApply && (
+                  <p className="text-xs text-slate-300 line-clamp-1 bg-white/[0.02] p-2 rounded border border-white/[0.04]">
+                    💡 <strong>Why Apply:</strong> {job.aiAnalysis.whyApply}
+                  </p>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center gap-2 shrink-0 flex-wrap w-full md:w-auto justify-end">
+                <RecruiterOutreachModal jobId={job.id} jobTitle={job.title} companyName={job.companyName} />
+                <InterviewPrepModal jobId={job.id} jobTitle={job.title} companyName={job.companyName} />
+
+                <button
+                  onClick={() => handleApplySingle(job.id)}
+                  disabled={processingId === job.id}
+                  className="btn-primary text-xs flex items-center gap-1.5"
+                >
+                  {processingId === job.id ? (
+                    <Loader2 size={13} className="animate-spin" />
+                  ) : (
+                    <Zap size={13} />
+                  )}
+                  <span>{processingId === job.id ? "Submitting..." : "Auto-Apply"}</span>
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
