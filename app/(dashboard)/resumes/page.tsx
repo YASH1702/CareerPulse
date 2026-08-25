@@ -9,10 +9,28 @@ export const metadata: Metadata = { title: "Resumes | JobPilot AI" };
 
 export default async function ResumesPage() {
   const resumes = await getResumes();
+  const activeResume = resumes.find((r) => r.isActive);
 
   return (
     <div>
-      <DashboardHeader title="Resumes" />
+      <DashboardHeader title="Resumes & Application Documents" />
+
+      {activeResume && (
+        <div className="mb-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
+              <FileText size={16} />
+            </div>
+            <div>
+              <p className="text-xs text-emerald-300 font-semibold">Active Resume for Auto-Apply & Submissions:</p>
+              <p className="text-sm font-medium text-white">{activeResume.name}</p>
+            </div>
+          </div>
+          <span className="text-xs text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20 font-medium">
+            Active Master
+          </span>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left: Upload */}

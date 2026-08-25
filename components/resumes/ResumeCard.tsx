@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { FileText, Trash2, Star, ChevronDown, ChevronUp, Loader2, Edit2, Check, X } from "lucide-react";
-import { deleteResumeAction, updateResumeNameAction } from "@/actions/resumes";
+import { FileText, Trash2, Star, ChevronDown, ChevronUp, Loader2, Edit2, Check, X, CheckCircle2 } from "lucide-react";
+import { deleteResumeAction, updateResumeNameAction, setActiveResumeAction } from "@/actions/resumes";
 import { formatRelativeDate } from "@/utils/format";
 
 interface ResumeCardProps {
@@ -18,6 +18,7 @@ interface ResumeCardProps {
     summary: string | null;
     skills: unknown;
     experience: unknown;
+    isActive?: boolean;
     createdAt: Date;
     updatedAt: Date;
   };
@@ -27,6 +28,7 @@ interface ResumeCardProps {
 export function ResumeCard({ resume, isOnly }: ResumeCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [activating, setActivating] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [nameVal, setNameVal] = useState(resume.name);
 
@@ -47,13 +49,19 @@ export function ResumeCard({ resume, isOnly }: ResumeCardProps) {
     setEditingName(false);
   }
 
+  async function handleSetActive() {
+    setActivating(true);
+    await setActiveResumeAction(resume.id);
+    setActivating(false);
+  }
+
   return (
-    <div className="glass-card overflow-hidden">
+    <div className={`glass-card overflow-hidden transition-all ${resume.isActive ? "border-emerald-500/30 shadow-lg shadow-emerald-500/5 bg-gradient-to-r from-emerald-500/[0.03] to-transparent" : ""}`}>
       {/* Header */}
       <div className="p-5 flex items-start justify-between gap-4">
         <div className="flex items-start gap-3 flex-1 min-w-0">
-          <div className="w-10 h-10 bg-blue-500/10 rounded-xl flex items-center justify-center shrink-0 mt-0.5">
-            <FileText size={18} className="text-blue-400" />
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${resume.isActive ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30" : "bg-blue-500/10 text-blue-400"}`}>
+            <FileText size={18} />
           </div>
           <div className="flex-1 min-w-0">
             {editingName ? (
@@ -77,7 +85,7 @@ export function ResumeCard({ resume, isOnly }: ResumeCardProps) {
               {resume.wordCount && <span className="text-slate-600 text-xs">{resume.wordCount} words</span>}
               <span className="text-slate-700 text-xs">{formatRelativeDate(resume.updatedAt)}</span>
               {hasAIData && (
-                <span className="text-xs bg-emerald-500/10 text-emerald-400 px-1.5 py-0.5 rounded">
+                <span className="text-xs bg-blue-500/10 text-blue-400 px-1.5 py-0.5 rounded">
                   AI extracted
                 </span>
               )}
@@ -85,7 +93,24 @@ export function ResumeCard({ resume, isOnly }: ResumeCardProps) {
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5 shrink-0">
+        <div className="flex items-center gap-2 shrink-0 flex-wrap">
+          {resume.isActive ? (
+            <span className="px-2.5 py-1.5 text-xs bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 rounded-lg font-medium flex items-center gap-1.5 shadow-sm">
+              <CheckCircle2 size={13} className="text-emerald-400" />
+              <span>Active for Applications</span>
+            </span>
+          ) : (
+            <button
+              onClick={handleSetActive}
+              disabled={activating}
+              className="px-2.5 py-1.5 text-xs bg-white/[0.04] hover:bg-blue-600/20 border border-white/10 hover:border-blue-500/30 text-slate-300 hover:text-blue-300 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer font-medium"
+              title="Make this the active resume used when submitting job applications"
+            >
+              {activating ? <Loader2 size={12} className="animate-spin" /> : <Star size={12} className="text-amber-400" />}
+              <span>Set as Active</span>
+            </button>
+          )}
+
           <Link
             href={`/resumes/${resume.id}`}
             className="px-2.5 py-1.5 text-xs bg-blue-600/10 hover:bg-blue-600/20 border border-blue-500/20 text-blue-400 hover:text-blue-300 rounded-lg transition-colors font-medium"

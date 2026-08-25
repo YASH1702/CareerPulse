@@ -11,8 +11,8 @@ export type { ActionResult };
 export async function getResumes() {
   const userId = await getRequiredUserId();
   return prisma.resume.findMany({
-    where: { userId, isActive: true },
-    orderBy: { createdAt: "desc" },
+    where: { userId },
+    orderBy: [{ isActive: "desc" }, { createdAt: "desc" }],
     select: {
       id: true,
       name: true,
@@ -31,6 +31,7 @@ export async function getResumes() {
       education: true,
       certifications: true,
       achievements: true,
+      isActive: true,
       createdAt: true,
       updatedAt: true,
     },
@@ -40,7 +41,7 @@ export async function getResumes() {
 export async function getResumeById(id: string) {
   const userId = await getRequiredUserId();
   return prisma.resume.findFirst({
-    where: { id, userId, isActive: true },
+    where: { id, userId },
   });
 }
 
@@ -67,13 +68,25 @@ export async function deleteResumeAction(resumeId: string): Promise<ActionResult
     await deleteResumeFile(resume.fileUrl);
   }
 
-  // Soft delete
-  await prisma.resume.update({
+  // Delete from database
+  await prisma.resume.delete({
     where: { id: resumeId },
-    data: { isActive: false },
   });
 
+  // If deleted resume was active, activate the most recent remaining resume
+  const nextResume = await prisma.resume.findFirst({
+    where: { userId },
+    orderBy: { createdAt: "desc" },
+  });
+  if (nextResume) {
+    await prisma.resume.update({
+      where: { id: nextResume.id },
+      data: { isActive: true },
+    });
+  }
+
   revalidatePath("/resumes");
+  revalidatePath("/auto-apply");
   return { success: true };
 }
 
@@ -84,7 +97,7 @@ export async function setActiveResumeAction(resumeId: string): Promise<ActionRes
 
   // Set all resumes inactive, then activate this one
   await prisma.resume.updateMany({
-    where: { userId, resumeType: "MASTER" },
+    where: { userId },
     data: { isActive: false },
   });
   await prisma.resume.update({
@@ -93,5 +106,6 @@ export async function setActiveResumeAction(resumeId: string): Promise<ActionRes
   });
 
   revalidatePath("/resumes");
+  revalidatePath("/auto-apply");
   return { success: true };
 }

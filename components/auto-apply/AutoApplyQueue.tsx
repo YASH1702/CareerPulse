@@ -2,7 +2,8 @@
 
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Zap, Play, CheckCircle2, Loader2, ExternalLink, Sparkles, Building2, MapPin, DollarSign, ArrowUpDown, Filter, Calendar, Clock } from "lucide-react";
+import Link from "next/link";
+import { Zap, Play, CheckCircle2, Loader2, ExternalLink, Sparkles, Building2, MapPin, DollarSign, ArrowUpDown, Filter, Calendar, Clock, FileText } from "lucide-react";
 import { executeAutoApplyForJobAction, getAutoApplyQueueAction } from "@/actions/auto-apply";
 import { runAutoScrapeAction, SourcingResult } from "@/actions/scraper";
 import { STATE_KEYWORD_MAP } from "@/lib/jobs/locations";
@@ -153,6 +154,16 @@ export function AutoApplyQueue({ initialQueue }: Props) {
               <option value="company" className="bg-slate-900 text-white">🏢 Company Name</option>
             </select>
           </div>
+
+          {/* Manage Resumes */}
+          <Link
+            href="/resumes"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-white/10 text-xs text-slate-300 hover:text-white transition-all shrink-0 font-medium"
+            title="Upload a new resume or set an active master resume"
+          >
+            <FileText size={12} className="text-blue-400 shrink-0" />
+            <span>Resumes</span>
+          </Link>
 
           {/* Scrape Trigger */}
           <button
