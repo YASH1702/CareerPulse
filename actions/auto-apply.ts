@@ -73,7 +73,7 @@ export async function executeAutoApplyForJobAction(
 
     if (!job) return { success: false, error: "Job not found" };
 
-    const eligibility = await checkAutoApplyEligibility(userId, job.matchScore ?? 0);
+    const eligibility = await checkAutoApplyEligibility(userId, job.matchScore ?? 0, { isManualApply: true });
     if (!eligibility.eligible) {
       return { success: false, error: eligibility.reason };
     }

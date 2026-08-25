@@ -61,6 +61,26 @@ export function AutoApplySettings({ initialConfig }: Props) {
     }
   };
 
+  const handleToggleMaster = async (nextState: boolean) => {
+    setIsEnabled(nextState);
+    const res = await updateAutoApplyConfigAction({
+      isEnabled: nextState,
+      mode,
+      minMatchScore,
+      maxDailyApplies,
+      targetCountry: "India",
+      targetStates: selectedStates,
+      enableLinkedIn: true,
+      enableGreenhouse: true,
+      enableLever: true,
+      enableRemoteAPIs: true,
+    });
+    if (res.success) {
+      setStatusMessage(nextState ? "Autonomous engine activated!" : "Autonomous engine paused.");
+      setTimeout(() => setStatusMessage(null), 3000);
+    }
+  };
+
   return (
     <div className="glass-card p-6 space-y-6">
       <div className="flex items-center justify-between border-b border-white/[0.06] pb-4">
@@ -81,7 +101,7 @@ export function AutoApplySettings({ initialConfig }: Props) {
           <input
             type="checkbox"
             checked={isEnabled}
-            onChange={(e) => setIsEnabled(e.target.checked)}
+            onChange={(e) => handleToggleMaster(e.target.checked)}
             className="sr-only peer"
           />
           <div className="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
