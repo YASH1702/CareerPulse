@@ -34,7 +34,29 @@ export async function submitDirectApplication(
 
   if (!job) return { success: false, error: "Job not found" };
   if (!profile) return { success: false, error: "Profile not found" };
-  if (!resume) return { success: false, error: "No active master or tailored resume available" };
+
+  let activeResume = resume;
+  if (!activeResume) {
+    activeResume = await prisma.resume.findFirst({ where: { userId } });
+  }
+
+  if (!activeResume && profile) {
+    const rawSkills = profile.skills.map((s) => s.name);
+    activeResume = await prisma.resume.create({
+      data: {
+        userId,
+        name: `${user?.name || "Candidate"} - Master Resume`,
+        resumeType: "MASTER",
+        summary: profile.bio || profile.headline || "Full Stack Developer",
+        targetRole: profile.currentRole || "Software Engineer",
+        rawText: `${user?.name || "Candidate"}\n${profile.headline || ""}\n${profile.bio || ""}\nSkills: ${rawSkills.join(", ")}`,
+        isActive: true,
+        skills: { technical: rawSkills, soft: ["Communication", "Problem Solving"] },
+      },
+    });
+  }
+
+  if (!activeResume) return { success: false, error: "No active master or tailored resume available" };
 
   try {
     const candidateName = user?.name || "Candidate";
@@ -70,7 +92,7 @@ export async function submitDirectApplication(
       create: {
         userId,
         jobId,
-        resumeId: resume.id,
+        resumeId: activeResume.id,
         appStatus: "APPLIED",
         appliedAt: new Date(),
         coverLetterText: options?.coverLetterText || null,
@@ -80,7 +102,7 @@ export async function submitDirectApplication(
       update: {
         appStatus: "APPLIED",
         appliedAt: new Date(),
-        resumeId: resume.id,
+        resumeId: activeResume.id,
         coverLetterText: options?.coverLetterText || undefined,
         tailoredResumeId: options?.tailoredResumeId || undefined,
         submissionProof,
@@ -95,7 +117,7 @@ export async function submitDirectApplication(
         description: `Autonomous application submitted to ${job.companyName} for ${job.title}`,
         metadata: {
           source: job.source,
-          resumeUsed: resume.name,
+          resumeUsed: activeResume.name,
           screeningAnswers,
         },
       },
