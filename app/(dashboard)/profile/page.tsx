@@ -5,6 +5,7 @@ import { BasicInfoForm } from "@/components/profile/BasicInfoForm";
 import { SkillsPanel } from "@/components/profile/SkillsPanel";
 import { JobPrefsForm } from "@/components/profile/JobPrefsForm";
 import { EducationPanel } from "@/components/profile/EducationPanel";
+import { LinkedInImportModal } from "@/components/profile/LinkedInImportModal";
 import { getProfile } from "@/actions/profile";
 
 export const metadata: Metadata = { title: "Profile | JobPilot AI" };
@@ -46,7 +47,10 @@ export default async function ProfilePage({
 
   return (
     <div>
-      <DashboardHeader title="Your Profile" />
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+        <DashboardHeader title="Your Profile" />
+        <LinkedInImportModal />
+      </div>
 
       {/* Completeness bar */}
       <div className="glass-card p-4 mb-6 flex items-center gap-4">
