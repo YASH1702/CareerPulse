@@ -64,9 +64,13 @@ const COMMON_TECH_SKILLS: Record<string, SkillCategory> = {
  * Heuristic fallback parser when AI API key is unavailable.
  */
 function heuristicLinkedInParse(rawText: string, linkedinUrl?: string): ExtractedLinkedInProfile {
-  const lines = rawText.split("\n").map((l) => l.trim()).filter(Boolean);
-  const name = lines[0] || "Candidate";
-  const headline = lines[1] || "Software Engineer";
+  const lines = rawText
+    .split("\n")
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0 && !l.startsWith("http://") && !l.startsWith("https://"));
+
+  const name = lines[0] && lines[0].length < 50 ? lines[0] : null;
+  const headline = lines[1] && lines[1].length < 120 ? lines[1] : "Full Stack Web Developer";
 
   const foundSkills: ExtractedLinkedInProfile["skills"] = [];
   const lower = rawText.toLowerCase();
@@ -84,11 +88,11 @@ function heuristicLinkedInParse(rawText: string, linkedinUrl?: string): Extracte
   return {
     name,
     headline,
-    bio: rawText.slice(0, 500),
+    bio: lines.join(" ").slice(0, 500) || null,
     location: "India",
     currentRole: headline,
     yearsExperience: 2,
-    targetRoles: ["Software Engineer", "Frontend Developer", "Full Stack Developer"],
+    targetRoles: ["Full Stack Developer", "Frontend Developer", "Software Engineer", "Backend Developer"],
     linkedinUrl: linkedinUrl || null,
     githubUrl: null,
     portfolioUrl: null,
