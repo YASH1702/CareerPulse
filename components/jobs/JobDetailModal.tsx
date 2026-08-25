@@ -1,6 +1,6 @@
 "use client";
 
-import { X, ExternalLink, Building2, MapPin, DollarSign, Calendar, Sparkles, Check, CheckCircle2, Bookmark, Trash2 } from "lucide-react";
+import { X, ExternalLink, Building2, MapPin, DollarSign, Calendar, Clock, Sparkles, Check, CheckCircle2, Bookmark, Trash2 } from "lucide-react";
 import { formatRelativeDate } from "@/utils/format";
 import { toggleSaveJobAction, deleteJobAction } from "@/actions/jobs";
 import { AIAnalysisPanel } from "./AIAnalysisPanel";
@@ -75,9 +75,13 @@ export function JobDetailModal({ job, onClose }: Props) {
                   {job.salaryText}
                 </span>
               )}
+              <span className="flex items-center gap-1.5 text-blue-400/90 font-medium text-xs">
+                <Calendar size={13} className="text-blue-400 shrink-0" />
+                Posted {formatRelativeDate(job.datePosted || job.createdAt)}
+              </span>
               <span className="flex items-center gap-1.5 text-slate-500 text-xs">
-                <Calendar size={13} />
-                Added {formatRelativeDate(job.createdAt)}
+                <Clock size={13} className="text-slate-600 shrink-0" />
+                Discovered {formatRelativeDate(job.dateDiscovered || job.createdAt)}
               </span>
             </div>
           </div>

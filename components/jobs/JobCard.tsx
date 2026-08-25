@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Building2, MapPin, DollarSign, Bookmark, Trash2, Eye, Sparkles, ExternalLink, Calendar } from "lucide-react";
+import { Building2, MapPin, DollarSign, Bookmark, Trash2, Eye, Sparkles, ExternalLink, Calendar, Clock } from "lucide-react";
 import { formatRelativeDate } from "@/utils/format";
 import { toggleSaveJobAction, deleteJobAction } from "@/actions/jobs";
 import type { Job, AIAnalysis } from "@prisma/client";
@@ -142,10 +142,16 @@ export function JobCard({ job, onSelect }: Props) {
 
       {/* Footer */}
       <div className="mt-4 pt-3 border-t border-white/[0.05] flex items-center justify-between text-xs text-slate-500">
-        <span className="flex items-center gap-1">
-          <Calendar size={12} />
-          {formatRelativeDate(job.createdAt)}
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="flex items-center gap-1 text-blue-400/90 font-medium">
+            <Calendar size={12} className="text-blue-400 shrink-0" />
+            Posted {formatRelativeDate(job.datePosted || job.createdAt)}
+          </span>
+          <span className="hidden sm:flex items-center gap-1 text-slate-500 text-[11px]">
+            <Clock size={11} className="text-slate-600 shrink-0" />
+            Discovered {formatRelativeDate(job.dateDiscovered || job.createdAt)}
+          </span>
+        </div>
 
         <div className="flex items-center gap-2">
           {job.applicationUrl && (

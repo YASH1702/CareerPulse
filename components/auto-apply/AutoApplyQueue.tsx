@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Zap, Play, CheckCircle2, Loader2, ExternalLink, Sparkles, Building2, MapPin, DollarSign, ArrowUpDown, Filter } from "lucide-react";
+import { Zap, Play, CheckCircle2, Loader2, ExternalLink, Sparkles, Building2, MapPin, DollarSign, ArrowUpDown, Filter, Calendar, Clock } from "lucide-react";
 import { executeAutoApplyForJobAction, getAutoApplyQueueAction } from "@/actions/auto-apply";
 import { runAutoScrapeAction, SourcingResult } from "@/actions/scraper";
 import { STATE_KEYWORD_MAP } from "@/lib/jobs/locations";
@@ -274,7 +274,12 @@ export function AutoApplyQueue({ initialQueue }: Props) {
                       {job.salaryText}
                     </span>
                   )}
-                  <span className="text-slate-500">
+                  <span className="flex items-center gap-1 text-blue-400/90 font-medium">
+                    <Calendar size={12} className="text-blue-400 shrink-0" />
+                    Posted {formatRelativeDate(job.datePosted || job.createdAt)}
+                  </span>
+                  <span className="flex items-center gap-1 text-slate-500">
+                    <Clock size={12} className="text-slate-600 shrink-0" />
                     Discovered {formatRelativeDate(job.dateDiscovered || job.createdAt)}
                   </span>
                 </div>
