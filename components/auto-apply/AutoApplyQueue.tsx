@@ -2,9 +2,10 @@
 
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Zap, Play, CheckCircle2, Loader2, ExternalLink, Sparkles, Building2, MapPin, DollarSign, ArrowUpDown } from "lucide-react";
+import { Zap, Play, CheckCircle2, Loader2, ExternalLink, Sparkles, Building2, MapPin, DollarSign, ArrowUpDown, Filter } from "lucide-react";
 import { executeAutoApplyForJobAction, getAutoApplyQueueAction } from "@/actions/auto-apply";
 import { runAutoScrapeAction, SourcingResult } from "@/actions/scraper";
+import { STATE_KEYWORD_MAP } from "@/lib/jobs/locations";
 import { RecruiterOutreachModal } from "@/components/jobs/RecruiterOutreachModal";
 import { InterviewPrepModal } from "@/components/jobs/InterviewPrepModal";
 import { formatRelativeDate } from "@/utils/format";
@@ -19,6 +20,16 @@ interface Props {
   initialQueue: QueuedJob[];
 }
 
+const QUICK_FILTER_PILLS = [
+  { id: "all_india", label: "🇮🇳 All India" },
+  { id: "karnataka", label: "📍 Bangalore" },
+  { id: "telangana", label: "📍 Hyderabad" },
+  { id: "maharashtra", label: "📍 Pune & Mumbai" },
+  { id: "delhi_ncr", label: "📍 Delhi NCR" },
+  { id: "tamil_nadu", label: "📍 Chennai" },
+  { id: "remote_india", label: "🌐 Remote" },
+];
+
 export function AutoApplyQueue({ initialQueue }: Props) {
   const router = useRouter();
   const [queue, setQueue] = useState<QueuedJob[]>(initialQueue);
@@ -28,8 +39,32 @@ export function AutoApplyQueue({ initialQueue }: Props) {
   const [selectedState, setSelectedState] = useState("all_india");
   const [sortBy, setSortBy] = useState<"date" | "score" | "company">("date");
 
-  const sortedQueue = useMemo(() => {
-    return [...queue].sort((a, b) => {
+  // Dynamic counts per location
+  const locationCounts = useMemo(() => {
+    const counts: Record<string, number> = { all_india: queue.length };
+    for (const pill of QUICK_FILTER_PILLS) {
+      if (pill.id === "all_india") continue;
+      const kws = STATE_KEYWORD_MAP[pill.id] || [];
+      counts[pill.id] = queue.filter((j) => {
+        const loc = (j.location || "").toLowerCase();
+        return kws.some((kw) => loc.includes(kw));
+      }).length;
+    }
+    return counts;
+  }, [queue]);
+
+  const filteredAndSortedQueue = useMemo(() => {
+    let list = queue;
+
+    if (selectedState !== "all_india") {
+      const keywords = STATE_KEYWORD_MAP[selectedState] || [];
+      list = list.filter((j) => {
+        const loc = (j.location || "").toLowerCase();
+        return keywords.some((kw) => loc.includes(kw));
+      });
+    }
+
+    return [...list].sort((a, b) => {
       if (sortBy === "score") {
         return (b.matchScore ?? 0) - (a.matchScore ?? 0);
       }
@@ -38,7 +73,7 @@ export function AutoApplyQueue({ initialQueue }: Props) {
       }
       return new Date(b.dateDiscovered || b.createdAt).getTime() - new Date(a.dateDiscovered || a.createdAt).getTime();
     });
-  }, [queue, sortBy]);
+  }, [queue, selectedState, sortBy]);
 
   const handleApplySingle = async (jobId: string) => {
     setProcessingId(jobId);
@@ -78,16 +113,16 @@ export function AutoApplyQueue({ initialQueue }: Props) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Action Header */}
       <div className="glass-card p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <h3 className="font-semibold text-white text-sm flex items-center gap-2">
             <Zap size={16} className="text-blue-400" />
-            <span>Auto-Apply Live Candidate Queue ({sortedQueue.length} Ready)</span>
+            <span>Auto-Apply Live Candidate Queue ({filteredAndSortedQueue.length} Active)</span>
           </h3>
           <p className="text-xs text-slate-400 mt-0.5">
-            Targeting India &amp; top Indian state tech hubs (Bangalore, Hyderabad, Pune, Delhi NCR, Remote).
+            Real-time verified engineering roles across India's top tech hubs.
           </p>
         </div>
 
@@ -106,36 +141,48 @@ export function AutoApplyQueue({ initialQueue }: Props) {
             </select>
           </div>
 
-          {/* State / City Selector */}
-          <div className="flex items-center gap-1.5 bg-slate-900/80 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white">
-            <MapPin size={13} className="text-blue-400 shrink-0" />
-            <select
-              value={selectedState}
-              onChange={(e) => setSelectedState(e.target.value)}
-              className="bg-transparent text-xs text-white outline-none cursor-pointer pr-1"
-            >
-              <option value="all_india" className="bg-slate-900 text-white">🇮🇳 All India (Default)</option>
-              <option value="karnataka" className="bg-slate-900 text-white">Karnataka (Bangalore)</option>
-              <option value="telangana" className="bg-slate-900 text-white">Telangana (Hyderabad)</option>
-              <option value="maharashtra" className="bg-slate-900 text-white">Maharashtra (Pune &amp; Mumbai)</option>
-              <option value="delhi_ncr" className="bg-slate-900 text-white">Delhi NCR (Gurgaon / Noida)</option>
-              <option value="tamil_nadu" className="bg-slate-900 text-white">Tamil Nadu (Chennai)</option>
-              <option value="kerala" className="bg-slate-900 text-white">Kerala (Kochi / Trivandrum)</option>
-              <option value="gujarat" className="bg-slate-900 text-white">Gujarat (Ahmedabad)</option>
-              <option value="west_bengal" className="bg-slate-900 text-white">West Bengal (Kolkata)</option>
-              <option value="remote_india" className="bg-slate-900 text-white">🌐 Remote (India &amp; Global)</option>
-            </select>
-          </div>
-
+          {/* Scrape Trigger */}
           <button
             onClick={handleRunScraper}
             disabled={isScraping}
             className="btn-primary text-xs flex items-center gap-2 shrink-0 px-4 py-2"
           >
             {isScraping ? <Loader2 size={13} className="animate-spin" /> : <Play size={13} />}
-            <span>{isScraping ? "Scraping India Sources..." : "Run Multi-Source Scraper Now"}</span>
+            <span>{isScraping ? "Syncing Live Openings..." : "Run Multi-Source Scraper Now"}</span>
           </button>
         </div>
+      </div>
+
+      {/* Interactive Location Filter Tabs */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+        <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium mr-1 shrink-0">
+          <Filter size={13} className="text-blue-400" />
+          <span>Location Filter:</span>
+        </div>
+        {QUICK_FILTER_PILLS.map((pill) => {
+          const count = locationCounts[pill.id] ?? 0;
+          const isActive = selectedState === pill.id;
+          return (
+            <button
+              key={pill.id}
+              onClick={() => setSelectedState(pill.id)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all shrink-0 flex items-center gap-1.5 ${
+                isActive
+                  ? "bg-blue-600 text-white shadow-lg shadow-blue-500/25 border border-blue-500"
+                  : "bg-slate-900/60 hover:bg-slate-800 text-slate-300 border border-white/5 hover:border-white/10"
+              }`}
+            >
+              <span>{pill.label}</span>
+              <span
+                className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold ${
+                  isActive ? "bg-white/20 text-white" : "bg-white/5 text-slate-400"
+                }`}
+              >
+                {count}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       {scrapeResult && (
@@ -151,19 +198,21 @@ export function AutoApplyQueue({ initialQueue }: Props) {
       )}
 
       {/* Queue Cards */}
-      {sortedQueue.length === 0 ? (
+      {filteredAndSortedQueue.length === 0 ? (
         <div className="glass-card p-12 text-center space-y-3">
           <div className="w-12 h-12 rounded-2xl bg-white/[0.03] flex items-center justify-center mx-auto text-slate-500">
             <Zap size={24} />
           </div>
-          <h4 className="font-semibold text-white text-sm">No Jobs Currently in Auto-Apply Queue</h4>
+          <h4 className="font-semibold text-white text-sm">
+            No Jobs Found for {QUICK_FILTER_PILLS.find((p) => p.id === selectedState)?.label || "Selected Location"}
+          </h4>
           <p className="text-xs text-slate-400 max-w-md mx-auto">
-            Click "Run Multi-Source Scraper Now" to automatically search LinkedIn, RemoteOK, Himalayas, and Greenhouse boards for new opportunities.
+            Click "Run Multi-Source Scraper Now" to fetch live engineering roles for this location, or switch to <strong>All India</strong> to view all 143 available positions.
           </p>
         </div>
       ) : (
         <div className="space-y-3">
-          {sortedQueue.map((job) => (
+          {filteredAndSortedQueue.map((job) => (
             <div
               key={job.id}
               className="glass-card p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
