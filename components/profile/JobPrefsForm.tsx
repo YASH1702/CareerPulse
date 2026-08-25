@@ -82,17 +82,43 @@ export function JobPrefsForm({ profile }: { profile: Profile | null }) {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {/* Salary Min */}
         <div>
-          <label className="label-field">Min Salary (LPA)</label>
-          <input name="salaryMin" type="number" min="0" className="input-field"
-            defaultValue={profile?.salaryMin ? profile.salaryMin / 100000 : ""}
-            placeholder="e.g. 8" />
+          <label className="label-field">Min Target Salary (LPA)</label>
+          <input
+            name="salaryMin"
+            type="number"
+            step="0.1"
+            min="0"
+            className="input-field"
+            defaultValue={
+              profile?.salaryMin
+                ? profile.salaryMin >= 1000
+                  ? Number((profile.salaryMin / 100000).toFixed(2))
+                  : profile.salaryMin
+                : ""
+            }
+            placeholder="e.g. 8 (8 LPA)"
+          />
+          <p className="text-[10px] text-slate-500 mt-1">e.g. 4 for ₹4,00,000 / year</p>
         </div>
         {/* Salary Max */}
         <div>
-          <label className="label-field">Max Salary (LPA)</label>
-          <input name="salaryMax" type="number" min="0" className="input-field"
-            defaultValue={profile?.salaryMax ? profile.salaryMax / 100000 : ""}
-            placeholder="e.g. 20" />
+          <label className="label-field">Max Target Salary (LPA)</label>
+          <input
+            name="salaryMax"
+            type="number"
+            step="0.1"
+            min="0"
+            className="input-field"
+            defaultValue={
+              profile?.salaryMax
+                ? profile.salaryMax >= 1000
+                  ? Number((profile.salaryMax / 100000).toFixed(2))
+                  : profile.salaryMax
+                : ""
+            }
+            placeholder="e.g. 25 (25 LPA)"
+          />
+          <p className="text-[10px] text-slate-500 mt-1">e.g. 15 for ₹15,00,000 / year</p>
         </div>
         {/* Notice Period */}
         <div>

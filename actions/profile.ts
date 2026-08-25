@@ -108,10 +108,22 @@ export async function updateJobPrefsAction(
 ): Promise<ActionResult> {
   const userId = await getRequiredUserId();
 
+  const rawSalaryMin = formData.get("salaryMin") ? Number(formData.get("salaryMin")) : null;
+  const rawSalaryMax = formData.get("salaryMax") ? Number(formData.get("salaryMax")) : null;
+
+  // Convert LPA input into absolute INR (e.g. 4 LPA -> 400,000 INR; if user entered >= 1000, treat as absolute)
+  const salaryMin = rawSalaryMin !== null && !isNaN(rawSalaryMin) && rawSalaryMin > 0
+    ? (rawSalaryMin < 200 ? Math.round(rawSalaryMin * 100000) : Math.round(rawSalaryMin))
+    : null;
+
+  const salaryMax = rawSalaryMax !== null && !isNaN(rawSalaryMax) && rawSalaryMax > 0
+    ? (rawSalaryMax < 200 ? Math.round(rawSalaryMax * 100000) : Math.round(rawSalaryMax))
+    : null;
+
   const raw = {
     remotePreference: formData.get("remotePreference"),
-    salaryMin: formData.get("salaryMin"),
-    salaryMax: formData.get("salaryMax"),
+    salaryMin: salaryMin ?? undefined,
+    salaryMax: salaryMax ?? undefined,
     salaryCurrency: formData.get("salaryCurrency") || "INR",
     noticePeriod: formData.get("noticePeriod"),
     minMatchScore: formData.get("minMatchScore") || "70",
@@ -138,6 +150,8 @@ export async function updateJobPrefsAction(
     create: {
       userId,
       ...parsed.data,
+      salaryMin,
+      salaryMax,
       targetRoles,
       preferredLocations,
       excludedKeywords,
@@ -146,6 +160,8 @@ export async function updateJobPrefsAction(
     },
     update: {
       ...parsed.data,
+      salaryMin,
+      salaryMax,
       targetRoles,
       preferredLocations,
       excludedKeywords,
