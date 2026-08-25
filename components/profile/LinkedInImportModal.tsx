@@ -2,8 +2,22 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Sparkles, Linkedin, X, Loader2, CheckCircle2, AlertCircle, ArrowRight, FileText } from "lucide-react";
+import { Sparkles, X, Loader2, CheckCircle2, AlertCircle, ArrowRight, FileText } from "lucide-react";
 import { importLinkedInProfileAction } from "@/actions/linkedin-import";
+
+function LinkedInIcon({ className = "w-4 h-4", size = 16 }: { className?: string; size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className={className}
+    >
+      <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z" />
+    </svg>
+  );
+}
 
 export function LinkedInImportModal() {
   const router = useRouter();
@@ -51,7 +65,7 @@ export function LinkedInImportModal() {
         onClick={() => setIsOpen(true)}
         className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-lg shadow-blue-500/20 flex items-center gap-2 border border-blue-400/30 transition-all cursor-pointer"
       >
-        <Linkedin size={14} className="fill-white" />
+        <LinkedInIcon size={14} className="text-white" />
         <span>Import from LinkedIn</span>
       </button>
 
@@ -62,7 +76,7 @@ export function LinkedInImportModal() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <div className="w-9 h-9 rounded-xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400">
-                  <Linkedin size={18} className="fill-blue-400" />
+                  <LinkedInIcon size={18} className="text-blue-400" />
                 </div>
                 <div>
                   <h3 className="font-semibold text-white text-base">Import LinkedIn Profile</h3>

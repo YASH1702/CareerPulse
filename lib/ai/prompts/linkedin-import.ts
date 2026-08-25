@@ -4,7 +4,7 @@ export function buildLinkedInProfileExtractionPrompt(rawText: string, linkedinUr
 RULES:
 - Only extract real information present in the text.
 - Standardize skills into clean industry names (e.g. "React", "TypeScript", "Node.js", "Python", "Docker", "PostgreSQL").
-- Map technical skills to categories: "FRONTEND", "BACKEND", "DATABASE", "DEVOPS", "AI_ML", "MOBILE", "CLOUD", or "OTHER".
+- Map technical skills to categories: "LANGUAGE", "FRAMEWORK", "DATABASE", "CLOUD", "TOOL", "SOFT", "AI", or "OTHER".
 - Extract target engineering roles (e.g. "Software Engineer", "Frontend Developer", "Full Stack Developer", "Backend Developer").
 - Extract education details with institution, degree, field of study, and years if available.
 - If a field is missing, use null.
@@ -31,7 +31,7 @@ Respond with ONLY valid JSON matching this exact structure:
   "skills": [
     {
       "name": "Skill Name",
-      "category": "FRONTEND" | "BACKEND" | "DATABASE" | "DEVOPS" | "AI_ML" | "MOBILE" | "CLOUD" | "OTHER",
+      "category": "LANGUAGE" | "FRAMEWORK" | "DATABASE" | "CLOUD" | "TOOL" | "SOFT" | "AI" | "OTHER",
       "proficiency": "EXPERT" | "ADVANCED" | "INTERMEDIATE" | "BEGINNER"
     }
   ],

@@ -85,7 +85,7 @@ export async function runAutoScrapeAction(options?: {
     }
 
     if (!userProfile) {
-      return { success: false, totalFetched: 0, newImported: 0, duplicates: 0, filteredOut: 0, error: "Failed to initialize profile" };
+      return { success: false, totalFetched: 0, newImported: 0, existingPreserved: 0, filteredOut: 0, totalActiveQueue: 0, error: "Failed to initialize profile" };
     }
 
     const keywords =

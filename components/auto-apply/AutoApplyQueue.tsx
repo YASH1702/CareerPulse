@@ -304,7 +304,6 @@ export function AutoApplyQueue({ initialQueue }: Props) {
                   jobId={job.id}
                   jobTitle={job.title}
                   companyName={job.companyName}
-                  companyLocation={job.location || undefined}
                 />
                 <InterviewPrepModal
                   jobId={job.id}
