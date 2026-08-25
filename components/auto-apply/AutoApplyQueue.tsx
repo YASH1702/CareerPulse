@@ -21,13 +21,13 @@ interface Props {
 }
 
 const QUICK_FILTER_PILLS = [
-  { id: "all_india", label: "🇮🇳 All India" },
+  { id: "all_india", label: "🇮🇳 All India (On-site + Remote)" },
+  { id: "remote_india", label: "🌐 India Remote Only (WFH)" },
   { id: "karnataka", label: "📍 Bangalore" },
   { id: "telangana", label: "📍 Hyderabad" },
   { id: "maharashtra", label: "📍 Pune & Mumbai" },
   { id: "delhi_ncr", label: "📍 Delhi NCR" },
   { id: "tamil_nadu", label: "📍 Chennai" },
-  { id: "remote_india", label: "🌐 Remote" },
 ];
 
 export function AutoApplyQueue({ initialQueue }: Props) {
@@ -38,12 +38,19 @@ export function AutoApplyQueue({ initialQueue }: Props) {
   const [scrapeResult, setScrapeResult] = useState<SourcingResult | null>(null);
   const [selectedState, setSelectedState] = useState("all_india");
   const [sortBy, setSortBy] = useState<"date" | "score" | "company">("date");
+  const [displayLimit, setDisplayLimit] = useState(60);
 
   // Dynamic counts per location
   const locationCounts = useMemo(() => {
     const counts: Record<string, number> = { all_india: queue.length };
     for (const pill of QUICK_FILTER_PILLS) {
       if (pill.id === "all_india") continue;
+      if (pill.id === "remote_india") {
+        counts.remote_india = queue.filter(
+          (j) => j.remoteType === "REMOTE" || (j.location || "").toLowerCase().includes("remote")
+        ).length;
+        continue;
+      }
       const kws = STATE_KEYWORD_MAP[pill.id] || [];
       counts[pill.id] = queue.filter((j) => {
         const loc = (j.location || "").toLowerCase();
@@ -56,7 +63,11 @@ export function AutoApplyQueue({ initialQueue }: Props) {
   const filteredAndSortedQueue = useMemo(() => {
     let list = queue;
 
-    if (selectedState !== "all_india") {
+    if (selectedState === "remote_india") {
+      list = list.filter(
+        (j) => j.remoteType === "REMOTE" || (j.location || "").toLowerCase().includes("remote")
+      );
+    } else if (selectedState !== "all_india") {
       const keywords = STATE_KEYWORD_MAP[selectedState] || [];
       list = list.filter((j) => {
         const loc = (j.location || "").toLowerCase();
@@ -112,6 +123,8 @@ export function AutoApplyQueue({ initialQueue }: Props) {
     }
   };
 
+  const visibleJobs = filteredAndSortedQueue.slice(0, displayLimit);
+
   return (
     <div className="space-y-4">
       {/* Action Header */}
@@ -119,10 +132,10 @@ export function AutoApplyQueue({ initialQueue }: Props) {
         <div>
           <h3 className="font-semibold text-white text-sm flex items-center gap-2">
             <Zap size={16} className="text-blue-400" />
-            <span>Auto-Apply Live Candidate Queue ({filteredAndSortedQueue.length} Active)</span>
+            <span>Auto-Apply Live Candidate Queue ({filteredAndSortedQueue.length} Active Positions)</span>
           </h3>
           <p className="text-xs text-slate-400 mt-0.5">
-            Real-time verified engineering roles across India's top tech hubs.
+            Real-time verified engineering roles across India's top tech hubs &amp; remote positions.
           </p>
         </div>
 
@@ -165,7 +178,10 @@ export function AutoApplyQueue({ initialQueue }: Props) {
           return (
             <button
               key={pill.id}
-              onClick={() => setSelectedState(pill.id)}
+              onClick={() => {
+                setSelectedState(pill.id);
+                setDisplayLimit(60);
+              }}
               className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all shrink-0 flex items-center gap-1.5 ${
                 isActive
                   ? "bg-blue-600 text-white shadow-lg shadow-blue-500/25 border border-blue-500"
@@ -207,76 +223,125 @@ export function AutoApplyQueue({ initialQueue }: Props) {
             No Jobs Found for {QUICK_FILTER_PILLS.find((p) => p.id === selectedState)?.label || "Selected Location"}
           </h4>
           <p className="text-xs text-slate-400 max-w-md mx-auto">
-            Click "Run Multi-Source Scraper Now" to fetch live engineering roles for this location, or switch to <strong>All India</strong> to view all 143 available positions.
+            Click "Run Multi-Source Scraper Now" to fetch live engineering roles for this location, or switch to <strong>All India</strong> to view all available positions.
           </p>
         </div>
       ) : (
         <div className="space-y-3">
-          {filteredAndSortedQueue.map((job) => (
+          {visibleJobs.map((job) => (
             <div
               key={job.id}
               className="glass-card p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
             >
-              <div className="space-y-1.5 flex-1">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h4 className="font-semibold text-white text-sm">{job.title}</h4>
-                  <span className="text-xs font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                    {job.matchScore ?? 80}% Match
-                  </span>
-                  <span className="text-[10px] px-2 py-0.5 rounded bg-white/[0.04] text-slate-400 border border-white/[0.06] capitalize">
-                    {job.source.toLowerCase()}
-                  </span>
-                  <span className="text-[10px] px-2 py-0.5 rounded bg-blue-500/10 text-blue-400">
-                    {job.freshness === "FRESH" ? "🔥 Fresh (<48h)" : "Active Window"}
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-3 text-xs text-slate-400 flex-wrap">
-                  <span className="flex items-center gap-1 text-slate-300">
-                    <Building2 size={12} className="text-slate-400" />
-                    {job.companyName}
-                  </span>
-                  {job.location && (
-                    <span className="flex items-center gap-1">
-                      <MapPin size={12} />
-                      {job.location}
+              <div className="space-y-1.5 max-w-2xl">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-semibold text-white text-sm">{job.title}</span>
+                  {job.matchScore !== null && (
+                    <span
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                        job.matchScore >= 85
+                          ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                          : job.matchScore >= 75
+                          ? "bg-blue-500/10 text-blue-400 border-blue-500/20"
+                          : "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                      }`}
+                    >
+                      {job.matchScore}% Match
                     </span>
                   )}
+                  <span className="text-[10px] bg-white/5 text-slate-400 px-2 py-0.5 rounded-full border border-white/5">
+                    {job.source}
+                  </span>
+                  {job.remoteType === "REMOTE" && (
+                    <span className="text-[10px] bg-purple-500/10 text-purple-300 border border-purple-500/20 px-2 py-0.5 rounded-full">
+                      🌐 Remote
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-400">
+                  <span className="flex items-center gap-1 text-slate-300 font-medium">
+                    <Building2 size={13} className="text-slate-500" />
+                    {job.companyName}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <MapPin size={13} className="text-slate-500" />
+                    {job.location || "India"}
+                  </span>
                   {job.salaryText && (
-                    <span className="flex items-center gap-1 text-emerald-400 font-medium">
-                      <DollarSign size={12} />
+                    <span className="flex items-center gap-1 text-emerald-400 font-mono">
+                      <DollarSign size={13} />
                       {job.salaryText}
                     </span>
                   )}
+                  <span className="text-slate-500">
+                    Discovered {formatRelativeDate(job.dateDiscovered || job.createdAt)}
+                  </span>
                 </div>
 
-                {job.aiAnalysis?.whyApply && (
-                  <p className="text-xs text-slate-300 line-clamp-1 bg-white/[0.02] p-2 rounded border border-white/[0.04]">
-                    💡 <strong>Why Apply:</strong> {job.aiAnalysis.whyApply}
-                  </p>
+                {job.requiredSkills && job.requiredSkills.length > 0 && (
+                  <div className="flex flex-wrap gap-1 pt-1">
+                    {job.requiredSkills.slice(0, 5).map((skill, idx) => (
+                      <span
+                        key={idx}
+                        className="text-[10px] bg-slate-800/60 text-slate-300 border border-white/5 px-2 py-0.5 rounded-md"
+                      >
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
                 )}
               </div>
 
               {/* Action Buttons */}
-              <div className="flex items-center gap-2 shrink-0 flex-wrap w-full md:w-auto justify-end">
-                <RecruiterOutreachModal jobId={job.id} jobTitle={job.title} companyName={job.companyName} />
-                <InterviewPrepModal jobId={job.id} jobTitle={job.title} companyName={job.companyName} />
-
+              <div className="flex items-center gap-2 w-full md:w-auto shrink-0 pt-2 md:pt-0">
+                <RecruiterOutreachModal
+                  jobId={job.id}
+                  jobTitle={job.title}
+                  companyName={job.companyName}
+                  companyLocation={job.location || undefined}
+                />
+                <InterviewPrepModal
+                  jobId={job.id}
+                  jobTitle={job.title}
+                  companyName={job.companyName}
+                />
+                <a
+                  href={job.applicationUrl || job.sourceUrl || "#"}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="btn-secondary text-xs p-2.5 flex items-center justify-center"
+                  title="View original posting"
+                >
+                  <ExternalLink size={13} />
+                </a>
                 <button
                   onClick={() => handleApplySingle(job.id)}
                   disabled={processingId === job.id}
-                  className="btn-primary text-xs flex items-center gap-1.5"
+                  className="btn-primary text-xs px-3.5 py-2 flex items-center gap-1.5"
                 >
                   {processingId === job.id ? (
                     <Loader2 size={13} className="animate-spin" />
                   ) : (
-                    <Zap size={13} />
+                    <Sparkles size={13} />
                   )}
-                  <span>{processingId === job.id ? "Submitting..." : "Auto-Apply"}</span>
+                  <span>Apply Now</span>
                 </button>
               </div>
             </div>
           ))}
+
+          {/* Load More Button */}
+          {filteredAndSortedQueue.length > displayLimit && (
+            <div className="text-center pt-4 pb-6">
+              <button
+                onClick={() => setDisplayLimit((prev) => prev + 60)}
+                className="btn-secondary px-6 py-2.5 text-xs font-semibold border border-white/10 hover:border-white/20 transition-all shadow-sm"
+              >
+                Load More Openings (Showing {displayLimit} of {filteredAndSortedQueue.length} Active Positions)
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

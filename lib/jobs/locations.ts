@@ -7,7 +7,8 @@ export interface LocationOption {
 }
 
 export const INDIA_LOCATION_OPTIONS: LocationOption[] = [
-  { id: "all_india", label: "🇮🇳 All India (Default)", state: "All", searchQuery: "India", isPopular: true },
+  { id: "all_india", label: "🇮🇳 All India (All Cities + All Remote)", state: "All", searchQuery: "India", isPopular: true },
+  { id: "remote_india", label: "🌐 India Remote Only (WFH)", state: "Remote", searchQuery: "Remote, India", isPopular: true },
   { id: "karnataka", label: "Karnataka (Bangalore / Bengaluru)", state: "Karnataka", searchQuery: "Bengaluru, Karnataka, India", isPopular: true },
   { id: "telangana", label: "Telangana (Hyderabad)", state: "Telangana", searchQuery: "Hyderabad, Telangana, India", isPopular: true },
   { id: "maharashtra", label: "Maharashtra (Pune & Mumbai)", state: "Maharashtra", searchQuery: "Pune, Maharashtra, India", isPopular: true },
@@ -19,10 +20,19 @@ export const INDIA_LOCATION_OPTIONS: LocationOption[] = [
   { id: "rajasthan", label: "Rajasthan (Jaipur)", state: "Rajasthan", searchQuery: "Jaipur, Rajasthan, India" },
   { id: "andhra_pradesh", label: "Andhra Pradesh (Visakhapatnam)", state: "Andhra Pradesh", searchQuery: "Visakhapatnam, Andhra Pradesh, India" },
   { id: "punjab_haryana", label: "Punjab & Chandigarh (Mohali)", state: "Punjab", searchQuery: "Chandigarh, India" },
-  { id: "remote_india", label: "🌐 Remote (India & Global)", state: "Remote", searchQuery: "Remote, India", isPopular: true },
 ];
 
 export const STATE_KEYWORD_MAP: Record<string, string[]> = {
+  all_india: [
+    "india", "bharat", "bangalore", "bengaluru", "karnataka", "hyderabad", "telangana",
+    "pune", "mumbai", "maharashtra", "delhi", "new delhi", "gurgaon", "gurugram",
+    "noida", "greater noida", "faridabad", "ghaziabad", "chennai", "tamil nadu",
+    "kochi", "kerala", "ahmedabad", "gujarat", "kolkata", "jaipur", "visakhapatnam",
+    "chandigarh", "mohali", "indore", "lucknow", "remote"
+  ],
+  remote_india: [
+    "remote", "work from home", "wfh", "anywhere in india", "pan india remote", "india remote", "remote - india", "remote, india"
+  ],
   karnataka: ["karnataka", "bangalore", "bengaluru", "mysore", "mysuru", "mangalore", "hubli", "blr"],
   telangana: ["telangana", "hyderabad", "secunderabad", "warangal", "hyd"],
   maharashtra: ["maharashtra", "pune", "mumbai", "navi mumbai", "thane", "nagpur", "nashik", "bom"],
@@ -34,7 +44,6 @@ export const STATE_KEYWORD_MAP: Record<string, string[]> = {
   rajasthan: ["rajasthan", "jaipur", "udaipur", "jodhpur"],
   andhra_pradesh: ["andhra pradesh", "andhra", "visakhapatnam", "vizag", "vijayawada", "tirupati"],
   punjab_haryana: ["punjab", "chandigarh", "mohali", "panchkula"],
-  remote_india: ["remote", "worldwide", "global", "anywhere", "work from home", "wfh", "india"],
 };
 
 export const STATE_SEARCH_QUERIES_MAP: Record<string, string[]> = {
@@ -47,6 +56,11 @@ export const STATE_SEARCH_QUERIES_MAP: Record<string, string[]> = {
     "New Delhi, Delhi, India",
     "Mumbai, Maharashtra, India",
     "Chennai, Tamil Nadu, India",
+    "Remote, India",
+  ],
+  remote_india: [
+    "Remote, India",
+    "India",
   ],
   delhi_ncr: [
     "New Delhi, Delhi, India",
@@ -95,14 +109,10 @@ export const STATE_SEARCH_QUERIES_MAP: Record<string, string[]> = {
     "Chandigarh, India",
     "Mohali, Punjab, India",
   ],
-  remote_india: [
-    "Remote, India",
-    "India",
-  ],
 };
 
 export const ALL_INDIAN_LOCATIONS = [
-  "india", "in", "bharat",
+  "india", "bharat",
   "bangalore", "bengaluru", "karnataka", "mysore", "mysuru", "mangalore", "hubli", "blr",
   "hyderabad", "telangana", "secunderabad", "warangal", "hyd",
   "pune", "mumbai", "maharashtra", "navi mumbai", "thane", "nagpur", "nashik", "bom",
@@ -130,12 +140,15 @@ export const FOREIGN_RESTRICTED_KEYWORDS = [
   "ireland", "dublin", "netherlands", "amsterdam", "holland",
   "poland", "warsaw", "krakow", "sweden", "stockholm", "switzerland", "zurich", "geneva", "austria", "vienna",
   "australia", "sydney", "melbourne", "brisbane", "new zealand", "auckland",
-  "singapore", "japan", "tokyo", "europe", "emea", "nordics",
+  "singapore", "japan", "tokyo", "europe", "emea", "nordics", "romania", "slovakia", "bulgaria",
   // US States & Cities
+  "santa clara", "san jose", "sunnyvale", "san francisco", "sf", "bay area", "silicon valley",
+  "new york", "new york city", "nyc", "brooklyn", "manhattan",
+  "seattle", "austin", "chicago", "boston", "atlanta", "denver", "los angeles", "la",
   "maryland", "virginia", "washington", "florida", "north carolina", "south carolina",
-  "georgia", "illinois", "california", "texas", "colorado", "massachusetts", "new york",
-  "district of columbia", "fed", "tennessee", "minnesota", "ontario", "quebec", "toronto", "vancouver",
-  "san francisco", "austin", "seattle", "chicago", "boston", "atlanta", "denver", "los angeles",
+  "georgia", "illinois", "california", "texas", "colorado", "massachusetts", "tennessee", "minnesota",
+  "district of columbia", "fed", "ontario", "quebec", "toronto", "vancouver",
+  "ca, us", "ny, us", "tx, us", "wa, us", "ca, usa", "ny, usa", "tx, usa", ", ca", ", ny", ", tx", ", wa", ", ma",
   "us-", "ca-", "uk-", "de-", "fr-", "us remote", "canada remote", "uk remote", "europe remote"
 ];
 
@@ -223,7 +236,7 @@ export function isLocationMatchingIndia(
     return { matches: false, reason: "Missing location" };
   }
 
-  // 1. Foreign keywords check
+  // 1. Check if foreign restriction keywords are present
   const isForeignRestricted = FOREIGN_RESTRICTED_KEYWORDS.some((foreign) => {
     const pattern = new RegExp(`(?:^|[^a-z0-9])${foreign}(?:$|[^a-z0-9])`, "i");
     return pattern.test(loc);
@@ -235,7 +248,7 @@ export function isLocationMatchingIndia(
     return pattern.test(loc);
   });
 
-  // If foreign country/city is present and India is NOT present, reject immediately
+  // If foreign country/city is present and India is NOT explicitly specified, reject immediately
   if (isForeignRestricted && !hasIndiaKeyword) {
     return { matches: false, reason: `Location "${jobLocation}" is restricted to foreign region outside India` };
   }

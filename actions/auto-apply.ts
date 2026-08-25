@@ -106,7 +106,7 @@ export async function getAutoApplyQueueAction() {
       { dateDiscovered: "desc" },
       { matchScore: "desc" },
     ],
-    take: 30,
+    take: 500,
     include: {
       aiAnalysis: true,
       applications: true,
