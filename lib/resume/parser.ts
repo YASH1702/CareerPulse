@@ -104,40 +104,43 @@ export async function extractTextFromBuffer(
 }
 
 async function extractFromPdf(buffer: Buffer): Promise<string> {
-  ensurePdfEnvironmentPolyfills();
+  // 1. Primary: unpdf (pure JS/Wasm PDF.js built for server environments)
+  try {
+    const { extractText } = await import("unpdf");
+    const uint8 = new Uint8Array(buffer);
+    const result = await extractText(uint8);
+    const textData = result?.text;
+    const fullText = Array.isArray(textData) ? textData.join("\n\n") : (textData || "");
+    if (fullText.trim().length > 0) {
+      return fullText.trim();
+    }
+  } catch (err) {
+    console.warn("[PDF Parser] unpdf parser note:", err);
+  }
 
+  // 2. Secondary: pdf-parse with DOM polyfills
+  ensurePdfEnvironmentPolyfills();
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const pdfModule = require("pdf-parse");
-
-    // Support pdf-parse v2+ ({ PDFParse: class })
     if (pdfModule?.PDFParse) {
       const parser = new pdfModule.PDFParse({ data: buffer });
       const result = await parser.getText();
-      if (typeof result === "string" && result.trim().length > 0) return result.trim();
-      if (result && typeof result.text === "string" && result.text.trim().length > 0) {
-        return result.text.trim();
-      }
+      const text = typeof result === "string" ? result : result?.text;
+      if (text && text.trim().length > 0) return text.trim();
     }
-
-    // Support pdf-parse v1 (function export)
     if (typeof pdfModule === "function") {
       const result = await pdfModule(buffer);
       if (result?.text && result.text.trim().length > 0) return result.text.trim();
     }
-
-    if (typeof pdfModule?.default === "function") {
-      const result = await pdfModule.default(buffer);
-      if (result?.text && result.text.trim().length > 0) return result.text.trim();
-    }
   } catch (err) {
-    console.warn("[PDF Parser] PDF.js engine encountered warning, attempting stream fallback:", err);
+    console.warn("[PDF Parser] pdf-parse fallback note:", err);
   }
 
-  // Fallback: Extract ASCII / UTF-8 text streams from raw PDF
+  // 3. Tertiary Fallback: Scan uncompressed and literal stream chunks
   const fallbackText = extractRawTextFromPdfStreams(buffer);
-  if (fallbackText && fallbackText.length > 30) {
-    return fallbackText;
+  if (fallbackText && fallbackText.trim().length > 10) {
+    return fallbackText.trim();
   }
 
   throw new Error("Could not extract readable text from PDF file. Please ensure it is not password protected or image-only.");
