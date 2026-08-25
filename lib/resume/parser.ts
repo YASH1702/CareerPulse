@@ -1,31 +1,59 @@
 /**
  * Extracts raw text from PDF or DOCX buffers.
- * Uses pdf-parse for PDFs, mammoth for DOCX.
+ * Uses pdf-parse (v2+ PDFParse / v1 fallback) for PDFs, mammoth for DOCX.
  */
 
 export async function extractTextFromBuffer(
   buffer: Buffer,
-  mimeType: string
+  mimeType: string,
+  fileName?: string
 ): Promise<string> {
-  if (mimeType === "application/pdf") {
-    return extractFromPdf(buffer);
-  }
-  if (
+  const isPdf =
+    mimeType === "application/pdf" ||
+    (fileName && fileName.toLowerCase().endsWith(".pdf")) ||
+    buffer.slice(0, 5).toString("ascii").startsWith("%PDF");
+
+  const isDocx =
     mimeType ===
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
-    mimeType === "application/msword"
-  ) {
+    mimeType === "application/msword" ||
+    (fileName &&
+      (fileName.toLowerCase().endsWith(".docx") ||
+        fileName.toLowerCase().endsWith(".doc")));
+
+  if (isPdf) {
+    return extractFromPdf(buffer);
+  }
+  if (isDocx) {
     return extractFromDocx(buffer);
   }
-  throw new Error(`Unsupported file type: ${mimeType}`);
+  throw new Error(`Unsupported file type: ${mimeType || fileName || "Unknown"}`);
 }
 
 async function extractFromPdf(buffer: Buffer): Promise<string> {
-  // pdf-parse is CJS-only; use require to avoid ESM interop issues
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const pdfParse = require("pdf-parse") as (buf: Buffer) => Promise<{ text: string }>;
-  const result = await pdfParse(buffer);
-  return result.text.trim();
+  const pdfModule = require("pdf-parse");
+
+  // Support pdf-parse v2+ ({ PDFParse: class })
+  if (pdfModule?.PDFParse) {
+    const parser = new pdfModule.PDFParse({ data: buffer });
+    const result = await parser.getText();
+    if (typeof result === "string") return result.trim();
+    if (result && typeof result.text === "string") return result.text.trim();
+  }
+
+  // Support pdf-parse v1 (function export)
+  if (typeof pdfModule === "function") {
+    const result = await pdfModule(buffer);
+    return (result?.text || "").trim();
+  }
+
+  if (typeof pdfModule?.default === "function") {
+    const result = await pdfModule.default(buffer);
+    return (result?.text || "").trim();
+  }
+
+  throw new Error("Unable to initialize PDF parsing engine.");
 }
 
 async function extractFromDocx(buffer: Buffer): Promise<string> {

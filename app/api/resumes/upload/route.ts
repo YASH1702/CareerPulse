@@ -30,7 +30,15 @@ export async function POST(req: NextRequest) {
     }
 
     // Validate
-    if (!ALLOWED_TYPES.includes(file.type)) {
+    const fileName = (file.name || "").toLowerCase();
+    const isPdf = file.type === "application/pdf" || fileName.endsWith(".pdf");
+    const isDocx =
+      file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+      file.type === "application/msword" ||
+      fileName.endsWith(".docx") ||
+      fileName.endsWith(".doc");
+
+    if (!isPdf && !isDocx) {
       return NextResponse.json(
         { error: "Only PDF and DOCX files are supported" },
         { status: 400 }
@@ -50,20 +58,32 @@ export async function POST(req: NextRequest) {
     // Extract text
     let rawText: string;
     try {
-      rawText = await extractTextFromBuffer(buffer, file.type);
-    } catch {
+      rawText = await extractTextFromBuffer(buffer, file.type, file.name);
+    } catch (parseErr) {
+      console.error("[Resume Upload Parser Error]:", parseErr);
       return NextResponse.json(
-        { error: "Could not read file. Please ensure it is a valid PDF or DOCX." },
+        {
+          error:
+            parseErr instanceof Error
+              ? parseErr.message
+              : "Could not read file. Please ensure it is a valid PDF or DOCX.",
+        },
         { status: 422 }
       );
     }
 
-    if (rawText.length < 100) {
+    if (rawText.length < 20) {
       return NextResponse.json(
-        { error: "Could not extract enough text from the file. Is it a scanned image PDF?" },
+        { error: "Could not extract text from the file. If it is a scanned image PDF, please upload a text-based PDF or DOCX." },
         { status: 422 }
       );
     }
+
+    // Deactivate existing resumes so this new upload becomes the primary active resume
+    await prisma.resume.updateMany({
+      where: { userId },
+      data: { isActive: false },
+    });
 
     // Upload file to storage (optional — skipped if Supabase not configured)
     const fileUrl = await uploadResumeFile(buffer, file.name, file.type);
