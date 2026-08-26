@@ -1,12 +1,11 @@
 /**
  * JobPilot AI - Universal Form Auto-Filler Engine
- * Multi-Platform support for LinkedIn Easy Apply, Greenhouse, Lever, Workday, Indeed, Wellfound, and generic career portals.
+ * Form-Header Docked Banner + Top-Right Floating Copilot for LinkedIn, Greenhouse, Lever, Workday, etc.
  */
 
 (function () {
-  console.log("[JobPilot AI] Universal Auto-Apply Copilot Loaded.");
+  console.log("[JobPilot AI] Universal Auto-Apply Copilot Initialized.");
 
-  // Cache candidate data
   let cachedCandidate = null;
 
   // Listen for messages from popup or background service worker
@@ -24,11 +23,101 @@
     return true;
   });
 
-  // Inject Floating Quick-Fill Button on Job Application Pages
+  // Get candidate data from storage or background
+  async function getCandidateData() {
+    if (cachedCandidate) return cachedCandidate;
+    try {
+      const data = await chrome.storage.local.get("jobpilot_candidate");
+      if (data.jobpilot_candidate) {
+        cachedCandidate = data.jobpilot_candidate;
+        return cachedCandidate;
+      }
+    } catch (e) {
+      console.warn("[JobPilot Storage Read Error]:", e);
+    }
+    return null;
+  }
+
+  // 1. Inject Inline Banner directly ABOVE the form / inside modal header
+  function injectFormHeaderBanner() {
+    // Look for form or modal containers
+    const targets = [
+      document.querySelector(".jobs-easy-apply-modal .artdeco-modal__header"),
+      document.querySelector(".jobs-easy-apply-modal form"),
+      document.querySelector(".jobs-easy-apply-content"),
+      document.querySelector("[data-test-modal] form"),
+      document.querySelector("[role='dialog'] form"),
+      document.querySelector("form#application_form"),
+      document.querySelector("form#application-form"),
+      document.querySelector("form.application-form"),
+      document.querySelector("#app_form"),
+      document.querySelector("form[action*='apply']"),
+      document.querySelector("[data-automation-id='workday-application']"),
+      document.querySelector("form"),
+    ].filter(Boolean);
+
+    if (targets.length === 0) return;
+
+    // Pick the most relevant container (prioritize modal headers & active application forms)
+    const container = targets[0];
+
+    // Avoid duplicate injection
+    if (container.querySelector(".jobpilot-inline-banner") || document.getElementById("jobpilot-inline-banner")) {
+      return;
+    }
+
+    const banner = document.createElement("div");
+    banner.id = "jobpilot-inline-banner";
+    banner.className = "jobpilot-inline-banner";
+    banner.innerHTML = `
+      <div class="jp-banner-left">
+        <span class="jp-banner-logo">⚡</span>
+        <div class="jp-banner-text">
+          <strong class="jp-banner-title">JobPilot AI Copilot</strong>
+          <span class="jp-banner-desc">Ready to 1-Click Auto-Fill with your profile</span>
+        </div>
+      </div>
+      <button type="button" class="jp-banner-btn" id="jp-banner-autofill-btn">
+        <span>⚡ 1-Click Auto-Fill Form</span>
+      </button>
+    `;
+
+    // Add click handler
+    const btn = banner.querySelector("#jp-banner-autofill-btn");
+    btn.addEventListener("click", async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      btn.disabled = true;
+      btn.innerHTML = "<span>⏳ Filling Fields...</span>";
+
+      const candidate = await getCandidateData();
+      if (candidate) {
+        const res = executeUniversalAutofill(candidate);
+        showToast(`🎉 JobPilot filled ${res.filledCount} fields on this step!`);
+        btn.innerHTML = `<span>✅ Filled (${res.filledCount} Fields)</span>`;
+      } else {
+        showToast("⚠️ Please open JobPilot extension popup to connect your profile.");
+        btn.innerHTML = "<span>⚡ 1-Click Auto-Fill Form</span>";
+      }
+
+      setTimeout(() => {
+        btn.disabled = false;
+        btn.innerHTML = "<span>⚡ 1-Click Auto-Fill Form</span>";
+      }, 2500);
+    });
+
+    // Insert at the top of the container
+    if (container.firstChild) {
+      container.insertBefore(banner, container.firstChild);
+    } else {
+      container.appendChild(banner);
+    }
+  }
+
+  // 2. Inject Top-Right Floating Copilot Button
   function injectFloatingWidget() {
     if (document.getElementById("jobpilot-floating-copilot")) return;
 
-    // Detect if this page contains application forms
     const isJobPage =
       window.location.hostname.includes("linkedin.com") ||
       window.location.hostname.includes("greenhouse.io") ||
@@ -47,16 +136,14 @@
     widget.innerHTML = `
       <div class="jp-pill-btn" title="Click to 1-Click Auto-Fill with JobPilot AI">
         <span class="jp-pill-icon">⚡</span>
-        <span class="jp-pill-text">Auto-Fill Form</span>
+        <span class="jp-pill-text">Auto-Fill (JobPilot)</span>
       </div>
     `;
 
     widget.addEventListener("click", async () => {
-      // Fetch latest profile from storage or background
-      const data = await chrome.storage.local.get("jobpilot_candidate");
-      if (data.jobpilot_candidate) {
-        cachedCandidate = data.jobpilot_candidate;
-        const res = executeUniversalAutofill(cachedCandidate);
+      const candidate = await getCandidateData();
+      if (candidate) {
+        const res = executeUniversalAutofill(candidate);
         showToast(`🎉 JobPilot filled ${res.filledCount} fields!`);
       } else {
         showToast("⚠️ Please open JobPilot extension popup to connect your profile.");
@@ -457,15 +544,21 @@
     };
   }
 
-  // Initialize
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", injectFloatingWidget);
-  } else {
+  // Auto-Runner
+  function setupObservers() {
+    injectFormHeaderBanner();
     injectFloatingWidget();
   }
 
-  // Observer for dynamic single-page app modals (LinkedIn Easy Apply Next steps)
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", setupObservers);
+  } else {
+    setupObservers();
+  }
+
+  // Observe dynamic form/modal appearance (LinkedIn Easy Apply modal opening, next step clicks)
   const observer = new MutationObserver(() => {
+    injectFormHeaderBanner();
     injectFloatingWidget();
   });
   observer.observe(document.body, { childList: true, subtree: true });
