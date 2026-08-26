@@ -1,31 +1,38 @@
 {
   "manifest_version": 3,
-  "name": "JobPilot AI — Auto-Apply & Scraper Co-Pilot",
+  "name": "JobPilot AI - Universal Auto-Apply Copilot",
   "version": "1.0.0",
-  "description": "Autonomous co-pilot that scrapes jobs and auto-fills LinkedIn Easy Apply & Naukri applications using your JobPilot profile.",
+  "description": "1-Click AI Auto-Fill for LinkedIn Easy Apply, Greenhouse, Lever, Workday, Indeed, and all job application forms.",
   "permissions": [
     "activeTab",
     "storage",
     "scripting"
   ],
   "host_permissions": [
-    "https://www.linkedin.com/*",
-    "https://*.naukri.com/*",
+    "<all_urls>",
     "http://localhost:3000/*"
   ],
   "action": {
-    "default_popup": "popup.html",
-    "default_title": "JobPilot AI Co-Pilot"
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "background": {
+    "service_worker": "background/service-worker.js"
   },
   "content_scripts": [
     {
-      "matches": ["https://www.linkedin.com/jobs/*"],
-      "js": ["content-scripts/linkedin-easy-apply.js"],
-      "run_at": "document_idle"
-    },
-    {
-      "matches": ["https://www.naukri.com/*"],
-      "js": ["content-scripts/naukri-apply.js"],
+      "matches": ["<all_urls>"],
+      "js": ["content/autofill.js"],
+      "css": ["content/autofill.css"],
       "run_at": "document_idle"
     }
   ]

@@ -71,6 +71,23 @@ export function DashboardNav() {
         })}
       </nav>
 
+      {/* Chrome Extension Banner */}
+      <div className="mx-2 mb-2 p-2.5 rounded-xl bg-gradient-to-br from-blue-600/15 via-indigo-600/10 to-transparent border border-blue-500/25 text-xs shadow-sm">
+        <div className="flex items-center gap-1.5 text-blue-400 font-semibold mb-1">
+          <Zap size={13} className="fill-blue-400/20" />
+          <span>Chrome Extension</span>
+        </div>
+        <p className="text-[11px] text-slate-400 leading-tight mb-2">
+          1-Click Auto-Fill for LinkedIn, Greenhouse & Workday.
+        </p>
+        <Link
+          href="/settings?tab=extension"
+          className="block text-center py-1.5 px-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold text-[11px] transition-all shadow-sm"
+        >
+          ⚡ Get Extension
+        </Link>
+      </div>
+
       {/* Bottom Nav */}
       <div className="px-2 py-3 border-t border-white/[0.05] space-y-0.5">
         {bottomItems.map((item) => {

@@ -40,6 +40,42 @@ export default async function SettingsPage() {
         </div>
       </div>
 
+      {/* Chrome Extension Card */}
+      <div className="glass-card p-6 space-y-4 border-blue-500/30 bg-gradient-to-r from-blue-600/10 via-indigo-600/5 to-transparent">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center text-blue-400">
+              <Sparkles size={20} />
+            </div>
+            <div>
+              <h3 className="font-semibold text-white text-sm flex items-center gap-2">
+                <span>JobPilot AI Chrome Extension (Universal Auto-Filler)</span>
+                <span className="text-[10px] bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded-full font-bold border border-blue-500/30">
+                  Ready to Load
+                </span>
+              </h3>
+              <p className="text-xs text-slate-400">
+                1-Click auto-fill for <strong>LinkedIn Easy Apply</strong>, <strong>Greenhouse</strong>, <strong>Lever</strong>, <strong>Workday</strong>, <strong>Indeed</strong>, and all company career pages.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-4 bg-slate-900/80 rounded-xl border border-white/10 space-y-2.5 text-xs text-slate-300">
+          <p className="font-semibold text-white flex items-center gap-1.5">
+            <span>⚡ How to install in 30 seconds:</span>
+          </p>
+          <ol className="list-decimal list-inside space-y-1.5 text-slate-400">
+            <li>Open <code className="text-blue-300 bg-white/5 px-1.5 py-0.5 rounded">chrome://extensions/</code> in Chrome, Brave, Edge, or Arc.</li>
+            <li>Enable <strong>"Developer mode"</strong> in the top-right corner.</li>
+            <li>Click <strong>"Load unpacked"</strong> and select the directory:</li>
+          </ol>
+          <div className="p-2.5 bg-black/50 rounded-lg border border-white/5 font-mono text-[11px] text-emerald-400 select-all break-all">
+            d:\AI Job Application Agent\jobpilot-ai\extension
+          </div>
+        </div>
+      </div>
+
       {/* API Integrations Status */}
       <div className="glass-card p-6 space-y-4">
         <div className="flex items-center gap-2">

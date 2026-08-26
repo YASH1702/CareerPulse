@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JobPilot AI Copilot</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <div class="brand">
+        <div class="logo-icon">⚡</div>
+        <div>
+          <h1 class="brand-title">JobPilot AI</h1>
+          <p class="brand-subtitle">Auto-Apply Copilot</p>
+        </div>
+      </div>
+      <div id="connection-status" class="status-badge connecting">
+        <span class="status-dot"></span>
+        <span id="status-text">Connecting...</span>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <div id="main-content" class="content">
+      <!-- Candidate Profile Card -->
+      <div class="card profile-card">
+        <div class="profile-header">
+          <div class="avatar" id="candidate-avatar">YK</div>
+          <div class="profile-info">
+            <h2 id="candidate-name" class="candidate-name">Loading...</h2>
+            <p id="candidate-headline" class="candidate-headline">Full Stack Web Developer</p>
+          </div>
+        </div>
+        <div class="profile-meta">
+          <span class="meta-tag" id="candidate-location">📍 India</span>
+          <span class="meta-tag" id="candidate-resume">📄 Master Resume</span>
+          <span class="meta-tag" id="candidate-skills">🛠️ 15 Skills</span>
+        </div>
+      </div>
+
+      <!-- Auto-Fill Primary Action -->
+      <button id="autofill-btn" class="btn btn-primary">
+        <span class="btn-icon">⚡</span>
+        <span>Auto-Fill This Application</span>
+      </button>
+
+      <div id="autofill-result" class="alert-box hidden"></div>
+
+      <!-- Quick Action Buttons -->
+      <div class="actions-grid">
+        <button id="track-btn" class="btn btn-secondary">
+          <span>📌 Mark as Applied</span>
+        </button>
+        <button id="sync-btn" class="btn btn-secondary">
+          <span>🔄 Sync Profile</span>
+        </button>
+      </div>
+
+      <!-- AI Question Assistant Accordion -->
+      <div class="card ai-card">
+        <div class="ai-header" id="ai-toggle">
+          <span class="ai-title">🤖 AI Screening Question Assistant</span>
+          <span class="chevron">▾</span>
+        </div>
+        <div id="ai-section" class="ai-body">
+          <textarea id="ai-question-input" class="input-textarea" placeholder="Paste any recruiter screening question here... (e.g. 'Why do you want to work here?', 'Explain your experience with React')"></textarea>
+          <button id="ai-generate-btn" class="btn btn-accent">
+            <span>✨ Generate Answer</span>
+          </button>
+          <div id="ai-answer-box" class="answer-box hidden">
+            <p id="ai-answer-text" class="answer-text"></p>
+            <button id="ai-copy-btn" class="btn-copy">📋 Copy Answer</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <a href="http://localhost:3000" target="_blank" class="footer-link">
+        <span>Open JobPilot Web Dashboard ↗</span>
+      </a>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

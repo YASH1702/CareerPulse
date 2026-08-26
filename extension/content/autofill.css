@@ -1,0 +1,81 @@
+/* Floating Copilot Pill */
+#jobpilot-floating-copilot {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 2147483647;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  user-select: none;
+}
+
+.jp-pill-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #1d4ed8, #2563eb);
+  color: #ffffff;
+  padding: 10px 16px;
+  border-radius: 9999px;
+  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.4), 0 2px 6px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.jp-pill-btn:hover {
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 12px 30px rgba(37, 99, 235, 0.6);
+  background: linear-gradient(135deg, #2563eb, #3b82f6);
+}
+
+.jp-pill-btn:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.jp-pill-icon {
+  font-size: 15px;
+  animation: jp-pulse 2s infinite ease-in-out;
+}
+
+@keyframes jp-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+}
+
+/* Highlighted Autofilled Field */
+.jobpilot-highlighted-field {
+  transition: all 0.4s ease !important;
+  border-color: #3b82f6 !important;
+  background-color: rgba(59, 130, 246, 0.08) !important;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3) !important;
+}
+
+/* Toast Message */
+#jobpilot-toast {
+  visibility: hidden;
+  position: fixed;
+  bottom: 80px;
+  right: 24px;
+  z-index: 2147483647;
+  background: #0f172a;
+  color: #f8fafc;
+  padding: 12px 18px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 0.3s ease;
+  pointer-events: none;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+#jobpilot-toast.jobpilot-toast-show {
+  visibility: visible;
+  opacity: 1;
+  transform: translateY(0);
+}
