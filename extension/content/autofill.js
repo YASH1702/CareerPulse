@@ -1,18 +1,59 @@
 /**
  * JobPilot AI - Universal Form Auto-Filler Engine
  * Form-Header Docked Banner + Top-Right Floating Copilot strictly restricted to Job Platforms and Career Portals.
+ * Inactive / Hidden when JobPilot server is offline.
  */
 
 (function () {
   let cachedCandidate = null;
+  let isServerOnline = false;
+  let lastServerCheck = 0;
 
-  // Strict Domain and Context Detector for Job Platforms
+  // 1. Check if JobPilot backend (localhost:3000) is online and reachable
+  async function checkServerStatus() {
+    const now = Date.now();
+    // Cache liveness check for 10 seconds to avoid excessive network calls
+    if (now - lastServerCheck < 10000 && isServerOnline && cachedCandidate) {
+      return true;
+    }
+
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 1200);
+
+      const res = await fetch("http://localhost:3000/api/extension/profile", {
+        method: "GET",
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.candidate) {
+          cachedCandidate = data.candidate;
+          isServerOnline = true;
+          lastServerCheck = now;
+          await chrome.storage.local.set({ jobpilot_candidate: data.candidate });
+          return true;
+        }
+      }
+    } catch (e) {
+      // Server is offline / stopped
+      isServerOnline = false;
+      cachedCandidate = null;
+    }
+
+    isServerOnline = false;
+    return false;
+  }
+
+  // 2. Strict Domain and Context Detector for Job Platforms
   function isJobApplicationContext() {
     const hostname = window.location.hostname.toLowerCase();
     const pathname = window.location.pathname.toLowerCase();
     const fullUrl = window.location.href.toLowerCase();
 
-    // 1. Blacklist non-job sites completely
+    // Blacklist non-job sites completely
     const nonJobSites = [
       "youtube.com", "google.com", "facebook.com", "instagram.com",
       "twitter.com", "x.com", "reddit.com", "amazon.", "flipkart.com",
@@ -21,13 +62,12 @@
       "openai.com", "claude.ai", "anthropic.com", "twitch.tv", "yahoo.com"
     ];
     if (nonJobSites.some((domain) => hostname.includes(domain))) {
-      // Exception only if explicitly on careers/jobs path
       if (!pathname.includes("/careers") && !pathname.includes("/jobs")) {
         return false;
       }
     }
 
-    // 2. Specific Job Boards and ATS Platforms
+    // Specific Job Boards and ATS Platforms
     const jobDomains = [
       "linkedin.com",
       "greenhouse.io",
@@ -65,7 +105,7 @@
 
     const matchesJobDomain = jobDomains.some((d) => hostname.includes(d) || fullUrl.includes(d));
 
-    // 3. For LinkedIn: Only activate on /jobs/ pages or when Easy Apply modal is present
+    // For LinkedIn: Only activate on /jobs/ pages or when Easy Apply modal is present
     if (hostname.includes("linkedin.com")) {
       const isLinkedInJob =
         pathname.includes("/jobs") ||
@@ -73,12 +113,12 @@
       return Boolean(isLinkedInJob);
     }
 
-    // 4. If on known ATS domain (Greenhouse, Lever, Workday, Ashby, etc.)
+    // If on known ATS domain
     if (matchesJobDomain) {
       return true;
     }
 
-    // 5. Generic Company Career Portals (e.g. careers.stripe.com or company.com/careers/apply)
+    // Generic Company Career Portals
     const isCareerSubdomain =
       hostname.startsWith("careers.") ||
       hostname.startsWith("jobs.") ||
@@ -117,24 +157,16 @@
     return true;
   });
 
-  // Get candidate data from storage or background
-  async function getCandidateData() {
-    if (cachedCandidate) return cachedCandidate;
-    try {
-      const data = await chrome.storage.local.get("jobpilot_candidate");
-      if (data.jobpilot_candidate) {
-        cachedCandidate = data.jobpilot_candidate;
-        return cachedCandidate;
-      }
-    } catch (e) {
-      console.warn("[JobPilot Storage Read Error]:", e);
-    }
-    return null;
-  }
-
   // 1. Inject Inline Banner directly ABOVE the form / inside modal header
-  function injectFormHeaderBanner() {
+  async function injectFormHeaderBanner() {
     if (!isJobApplicationContext()) {
+      removeInjectedElements();
+      return;
+    }
+
+    // Check if backend server is online
+    const online = await checkServerStatus();
+    if (!online) {
       removeInjectedElements();
       return;
     }
@@ -158,10 +190,8 @@
 
     if (targets.length === 0) return;
 
-    // Pick the most relevant container
     const container = targets[0];
 
-    // Avoid duplicate injection
     if (container.querySelector(".jobpilot-inline-banner") || document.getElementById("jobpilot-inline-banner")) {
       return;
     }
@@ -182,7 +212,6 @@
       </button>
     `;
 
-    // Add click handler
     const btn = banner.querySelector("#jp-banner-autofill-btn");
     btn.addEventListener("click", async (e) => {
       e.preventDefault();
@@ -190,13 +219,12 @@
       btn.disabled = true;
       btn.innerHTML = "<span>⏳ Filling Fields...</span>";
 
-      const candidate = await getCandidateData();
-      if (candidate) {
-        const res = executeUniversalAutofill(candidate);
+      if (cachedCandidate) {
+        const res = executeUniversalAutofill(cachedCandidate);
         showToast(`🎉 JobPilot filled ${res.filledCount} fields on this step!`);
         btn.innerHTML = `<span>✅ Filled (${res.filledCount} Fields)</span>`;
       } else {
-        showToast("⚠️ Please open JobPilot extension popup to connect your profile.");
+        showToast("⚠️ JobPilot server is offline. Please start localhost:3000.");
         btn.innerHTML = "<span>⚡ 1-Click Auto-Fill Form</span>";
       }
 
@@ -206,7 +234,6 @@
       }, 2500);
     });
 
-    // Insert at the top of the container
     if (container.firstChild) {
       container.insertBefore(banner, container.firstChild);
     } else {
@@ -214,9 +241,15 @@
     }
   }
 
-  // 2. Inject Top-Right Floating Copilot Button on Job Pages Only
-  function injectFloatingWidget() {
+  // 2. Inject Top-Right Floating Copilot Button on Job Pages Only When Online
+  async function injectFloatingWidget() {
     if (!isJobApplicationContext()) {
+      removeInjectedElements();
+      return;
+    }
+
+    const online = await checkServerStatus();
+    if (!online) {
       removeInjectedElements();
       return;
     }
@@ -233,12 +266,11 @@
     `;
 
     widget.addEventListener("click", async () => {
-      const candidate = await getCandidateData();
-      if (candidate) {
-        const res = executeUniversalAutofill(candidate);
+      if (cachedCandidate) {
+        const res = executeUniversalAutofill(cachedCandidate);
         showToast(`🎉 JobPilot filled ${res.filledCount} fields!`);
       } else {
-        showToast("⚠️ Please open JobPilot extension popup to connect your profile.");
+        showToast("⚠️ JobPilot server is offline. Please start localhost:3000.");
       }
     });
 
@@ -352,25 +384,21 @@
     else if (hostname.includes("workday")) platform = "Workday";
     else if (hostname.includes("indeed.com")) platform = "Indeed";
 
-    // 1. Scan all input, select, and textarea elements
     const inputs = Array.from(
       document.querySelectorAll("input:not([type='hidden']):not([type='submit']), select, textarea")
     );
 
     inputs.forEach((input) => {
-      // Skip if already filled
       if (input.type !== "radio" && input.type !== "checkbox" && input.value && input.value.trim().length > 0) {
         return;
       }
 
-      // Gather contextual labels and descriptors
       const id = (input.id || "").toLowerCase();
       const name = (input.name || "").toLowerCase();
       const placeholder = (input.placeholder || "").toLowerCase();
       const ariaLabel = (input.getAttribute("aria-label") || "").toLowerCase();
       const autocomplete = (input.autocomplete || "").toLowerCase();
 
-      // Find nearest label or legend text
       let labelText = "";
       if (input.labels && input.labels.length > 0) {
         labelText = Array.from(input.labels).map((l) => l.innerText).join(" ").toLowerCase();
@@ -386,7 +414,7 @@
 
       const descriptor = `${id} ${name} ${placeholder} ${ariaLabel} ${autocomplete} ${labelText}`.trim();
 
-      // ─── First Name ──────────────────────────────────────────
+      // First Name
       if (
         (descriptor.includes("first") && (descriptor.includes("name") || descriptor.includes("given"))) ||
         descriptor.includes("fname") ||
@@ -396,7 +424,7 @@
         return;
       }
 
-      // ─── Last Name ───────────────────────────────────────────
+      // Last Name
       if (
         (descriptor.includes("last") && (descriptor.includes("name") || descriptor.includes("family") || descriptor.includes("surname"))) ||
         descriptor.includes("lname") ||
@@ -406,7 +434,7 @@
         return;
       }
 
-      // ─── Full Name ───────────────────────────────────────────
+      // Full Name
       if (
         (descriptor.includes("full") && descriptor.includes("name")) ||
         (descriptor.includes("name") && !descriptor.includes("company") && !descriptor.includes("user") && !descriptor.includes("file") && !descriptor.includes("first") && !descriptor.includes("last")) ||
@@ -416,7 +444,7 @@
         return;
       }
 
-      // ─── Email ───────────────────────────────────────────────
+      // Email
       if (
         descriptor.includes("email") ||
         input.type === "email" ||
@@ -426,7 +454,7 @@
         return;
       }
 
-      // ─── Phone / Mobile ──────────────────────────────────────
+      // Phone / Mobile
       if (
         descriptor.includes("phone") ||
         descriptor.includes("mobile") ||
@@ -444,7 +472,7 @@
         return;
       }
 
-      // ─── LinkedIn URL ────────────────────────────────────────
+      // LinkedIn URL
       if (
         descriptor.includes("linkedin") ||
         descriptor.includes("linkedin url") ||
@@ -454,7 +482,7 @@
         return;
       }
 
-      // ─── GitHub URL ──────────────────────────────────────────
+      // GitHub URL
       if (
         descriptor.includes("github") ||
         descriptor.includes("git") ||
@@ -465,7 +493,7 @@
         return;
       }
 
-      // ─── Portfolio / Website URL ─────────────────────────────
+      // Portfolio / Website URL
       if (
         descriptor.includes("portfolio") ||
         descriptor.includes("website") ||
@@ -476,7 +504,7 @@
         return;
       }
 
-      // ─── City ────────────────────────────────────────────────
+      // City
       if (
         descriptor.includes("city") ||
         descriptor.includes("current city") ||
@@ -486,7 +514,7 @@
         return;
       }
 
-      // ─── State / Province ────────────────────────────────────
+      // State / Province
       if (
         descriptor.includes("state") ||
         descriptor.includes("province") ||
@@ -496,7 +524,7 @@
         return;
       }
 
-      // ─── Country ─────────────────────────────────────────────
+      // Country
       if (
         descriptor.includes("country") ||
         autocomplete === "country-name"
@@ -505,7 +533,7 @@
         return;
       }
 
-      // ─── Location / Address Line ─────────────────────────────
+      // Location / Address Line
       if (
         (descriptor.includes("location") || descriptor.includes("address")) &&
         !descriptor.includes("email")
@@ -514,7 +542,7 @@
         return;
       }
 
-      // ─── Current Job Title / Role ────────────────────────────
+      // Current Job Title / Role
       if (
         descriptor.includes("headline") ||
         descriptor.includes("current role") ||
@@ -525,7 +553,7 @@
         return;
       }
 
-      // ─── Notice Period / Availability ────────────────────────
+      // Notice Period / Availability
       if (
         descriptor.includes("notice period") ||
         descriptor.includes("how soon can you join") ||
@@ -542,7 +570,7 @@
         return;
       }
 
-      // ─── Expected Salary / CTC ───────────────────────────────
+      // Expected Salary / CTC
       if (
         descriptor.includes("expected salary") ||
         descriptor.includes("desired salary") ||
@@ -556,7 +584,7 @@
         return;
       }
 
-      // ─── Total Years of Experience ───────────────────────────
+      // Total Years of Experience
       if (
         (descriptor.includes("years") && descriptor.includes("experience") && !descriptor.includes("react") && !descriptor.includes("node") && !descriptor.includes("typescript")) ||
         descriptor.includes("total experience")
@@ -565,7 +593,7 @@
         return;
       }
 
-      // ─── Skill-Specific Years of Experience (LinkedIn Easy Apply Questions) ────
+      // Skill-Specific Years of Experience
       if (candidate.skillsMap) {
         for (const [skillName, years] of Object.entries(candidate.skillsMap)) {
           if (descriptor.includes(skillName) && (descriptor.includes("years") || descriptor.includes("experience") || input.type === "number")) {
@@ -577,7 +605,7 @@
         }
       }
 
-      // ─── Legal / Work Authorization (Yes/No Radios & Dropdowns) ────────────────
+      // Work Authorization
       if (
         descriptor.includes("authorized to work") ||
         descriptor.includes("legally authorized") ||
@@ -594,7 +622,7 @@
         return;
       }
 
-      // ─── Visa Sponsorship (Yes/No Radios & Dropdowns) ──────────────────────────
+      // Visa Sponsorship
       if (
         descriptor.includes("sponsorship") ||
         descriptor.includes("visa sponsorship") ||
@@ -610,7 +638,7 @@
         return;
       }
 
-      // ─── Willing to Relocate ──────────────────────────────────────────────────
+      // Willing to Relocate
       if (descriptor.includes("relocate") || descriptor.includes("willing to relocate")) {
         if (input.type === "radio" && (labelText.includes("yes") || descriptor.includes("yes"))) {
           if (setNativeValue(input, true)) filledCount++;
@@ -620,7 +648,7 @@
         return;
       }
 
-      // ─── Degree / Education ───────────────────────────────────────────────────
+      // Degree / Education
       if (descriptor.includes("degree") || descriptor.includes("education level")) {
         const degreeVal = candidate.education[0]?.degree || "Master of Science (M.Sc IT)";
         if (setNativeValue(input, degreeVal)) filledCount++;
@@ -647,22 +675,20 @@
     };
   }
 
-  // Auto-Runner
-  function setupObservers() {
+  // Auto-Runner with Server Liveness Detection
+  function runCheck() {
     injectFormHeaderBanner();
     injectFloatingWidget();
   }
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", setupObservers);
+    document.addEventListener("DOMContentLoaded", runCheck);
   } else {
-    setupObservers();
+    runCheck();
   }
 
-  // Observe dynamic page transitions (e.g. LinkedIn Easy Apply modal opening)
   const observer = new MutationObserver(() => {
-    injectFormHeaderBanner();
-    injectFloatingWidget();
+    runCheck();
   });
   observer.observe(document.body, { childList: true, subtree: true });
 })();
