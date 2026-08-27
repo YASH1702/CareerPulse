@@ -1,12 +1,106 @@
 /**
  * JobPilot AI - Universal Form Auto-Filler Engine
- * Form-Header Docked Banner + Top-Right Floating Copilot for LinkedIn, Greenhouse, Lever, Workday, etc.
+ * Form-Header Docked Banner + Top-Right Floating Copilot strictly restricted to Job Platforms and Career Portals.
  */
 
 (function () {
-  console.log("[JobPilot AI] Universal Auto-Apply Copilot Initialized.");
-
   let cachedCandidate = null;
+
+  // Strict Domain and Context Detector for Job Platforms
+  function isJobApplicationContext() {
+    const hostname = window.location.hostname.toLowerCase();
+    const pathname = window.location.pathname.toLowerCase();
+    const fullUrl = window.location.href.toLowerCase();
+
+    // 1. Blacklist non-job sites completely
+    const nonJobSites = [
+      "youtube.com", "google.com", "facebook.com", "instagram.com",
+      "twitter.com", "x.com", "reddit.com", "amazon.", "flipkart.com",
+      "netflix.com", "github.com", "stackoverflow.com", "wikipedia.org",
+      "medium.com", "gmail.com", "mail.google.com", "chatgpt.com",
+      "openai.com", "claude.ai", "anthropic.com", "twitch.tv", "yahoo.com"
+    ];
+    if (nonJobSites.some((domain) => hostname.includes(domain))) {
+      // Exception only if explicitly on careers/jobs path
+      if (!pathname.includes("/careers") && !pathname.includes("/jobs")) {
+        return false;
+      }
+    }
+
+    // 2. Specific Job Boards and ATS Platforms
+    const jobDomains = [
+      "linkedin.com",
+      "greenhouse.io",
+      "lever.co",
+      "workday.com",
+      "myworkdayjobs.com",
+      "ashbyhq.com",
+      "smartrecruiters.com",
+      "indeed.com",
+      "wellfound.com",
+      "angel.co",
+      "naukri.com",
+      "foundit.in",
+      "glassdoor.com",
+      "glassdoor.co.in",
+      "bamboohr.com",
+      "icims.com",
+      "workable.com",
+      "jobvite.com",
+      "rippling.com",
+      "breezy.hr",
+      "recruitee.com",
+      "polymer.co",
+      "pinpointhq.com",
+      "join.com",
+      "talent.com",
+      "ziprecruiter.com",
+      "cutshort.io",
+      "instahyre.com",
+      "hiring.cafe",
+      "ycombinator.com/jobs",
+      "remoteok.com",
+      "weworkremotely.com"
+    ];
+
+    const matchesJobDomain = jobDomains.some((d) => hostname.includes(d) || fullUrl.includes(d));
+
+    // 3. For LinkedIn: Only activate on /jobs/ pages or when Easy Apply modal is present
+    if (hostname.includes("linkedin.com")) {
+      const isLinkedInJob =
+        pathname.includes("/jobs") ||
+        document.querySelector(".jobs-easy-apply-modal, [data-test-modal], .jobs-apply-button, [data-job-id]");
+      return Boolean(isLinkedInJob);
+    }
+
+    // 4. If on known ATS domain (Greenhouse, Lever, Workday, Ashby, etc.)
+    if (matchesJobDomain) {
+      return true;
+    }
+
+    // 5. Generic Company Career Portals (e.g. careers.stripe.com or company.com/careers/apply)
+    const isCareerSubdomain =
+      hostname.startsWith("careers.") ||
+      hostname.startsWith("jobs.") ||
+      hostname.startsWith("join.");
+    const isCareerPath =
+      pathname.includes("/careers") ||
+      pathname.includes("/career") ||
+      pathname.includes("/jobs") ||
+      pathname.includes("/job/") ||
+      pathname.includes("/apply") ||
+      pathname.includes("/openings") ||
+      pathname.includes("/positions");
+
+    if (isCareerSubdomain || isCareerPath) {
+      const hasJobForm = document.querySelector(
+        "input[type='file'], form[action*='apply'], [class*='apply'], [class*='job'], [id*='apply'], [id*='job'], form[name*='apply']"
+      );
+      if (hasJobForm) return true;
+    }
+
+    return false;
+  }
 
   // Listen for messages from popup or background service worker
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -40,25 +134,31 @@
 
   // 1. Inject Inline Banner directly ABOVE the form / inside modal header
   function injectFormHeaderBanner() {
+    if (!isJobApplicationContext()) {
+      removeInjectedElements();
+      return;
+    }
+
     // Look for form or modal containers
     const targets = [
       document.querySelector(".jobs-easy-apply-modal .artdeco-modal__header"),
       document.querySelector(".jobs-easy-apply-modal form"),
       document.querySelector(".jobs-easy-apply-content"),
       document.querySelector("[data-test-modal] form"),
-      document.querySelector("[role='dialog'] form"),
       document.querySelector("form#application_form"),
       document.querySelector("form#application-form"),
       document.querySelector("form.application-form"),
       document.querySelector("#app_form"),
-      document.querySelector("form[action*='apply']"),
       document.querySelector("[data-automation-id='workday-application']"),
-      document.querySelector("form"),
+      document.querySelector("form[action*='apply']"),
+      document.querySelector("form[class*='apply']"),
+      document.querySelector("form[id*='apply']"),
+      document.querySelector("form:has(input[type='file'])"),
     ].filter(Boolean);
 
     if (targets.length === 0) return;
 
-    // Pick the most relevant container (prioritize modal headers & active application forms)
+    // Pick the most relevant container
     const container = targets[0];
 
     // Avoid duplicate injection
@@ -114,22 +214,14 @@
     }
   }
 
-  // 2. Inject Top-Right Floating Copilot Button
+  // 2. Inject Top-Right Floating Copilot Button on Job Pages Only
   function injectFloatingWidget() {
+    if (!isJobApplicationContext()) {
+      removeInjectedElements();
+      return;
+    }
+
     if (document.getElementById("jobpilot-floating-copilot")) return;
-
-    const isJobPage =
-      window.location.hostname.includes("linkedin.com") ||
-      window.location.hostname.includes("greenhouse.io") ||
-      window.location.hostname.includes("lever.co") ||
-      window.location.hostname.includes("workday") ||
-      window.location.hostname.includes("indeed.com") ||
-      window.location.hostname.includes("wellfound.com") ||
-      window.location.hostname.includes("ashbyhq.com") ||
-      window.location.hostname.includes("smartrecruiters.com") ||
-      document.querySelector("form, [role='dialog'], .jobs-easy-apply-modal, input[type='file']");
-
-    if (!isJobPage) return;
 
     const widget = document.createElement("div");
     widget.id = "jobpilot-floating-copilot";
@@ -151,6 +243,13 @@
     });
 
     document.body.appendChild(widget);
+  }
+
+  function removeInjectedElements() {
+    const banner = document.getElementById("jobpilot-inline-banner");
+    if (banner) banner.remove();
+    const widget = document.getElementById("jobpilot-floating-copilot");
+    if (widget) widget.remove();
   }
 
   // Set Value with Full React / Framework Dispatch Events
@@ -254,7 +353,9 @@
     else if (hostname.includes("indeed.com")) platform = "Indeed";
 
     // 1. Scan all input, select, and textarea elements
-    const inputs = Array.from(document.querySelectorAll("input:not([type='hidden']):not([type='submit']), select, textarea"));
+    const inputs = Array.from(
+      document.querySelectorAll("input:not([type='hidden']):not([type='submit']), select, textarea")
+    );
 
     inputs.forEach((input) => {
       // Skip if already filled
@@ -275,7 +376,9 @@
         labelText = Array.from(input.labels).map((l) => l.innerText).join(" ").toLowerCase();
       }
       if (!labelText) {
-        const parentLabel = input.closest("label, .fb-dash-form-element, .jobs-easy-apply-form-section__grouping, .application-question, .field, [class*='form-group']");
+        const parentLabel = input.closest(
+          "label, .fb-dash-form-element, .jobs-easy-apply-form-section__grouping, .application-question, .field, [class*='form-group']"
+        );
         if (parentLabel) {
           labelText = parentLabel.innerText.toLowerCase();
         }
@@ -556,7 +659,7 @@
     setupObservers();
   }
 
-  // Observe dynamic form/modal appearance (LinkedIn Easy Apply modal opening, next step clicks)
+  // Observe dynamic page transitions (e.g. LinkedIn Easy Apply modal opening)
   const observer = new MutationObserver(() => {
     injectFormHeaderBanner();
     injectFloatingWidget();
