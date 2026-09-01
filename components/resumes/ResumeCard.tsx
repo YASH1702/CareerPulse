@@ -5,6 +5,7 @@ import Link from "next/link";
 import { FileText, Trash2, Star, ChevronDown, ChevronUp, Loader2, Edit2, Check, X, CheckCircle2 } from "lucide-react";
 import { deleteResumeAction, updateResumeNameAction, setActiveResumeAction } from "@/actions/resumes";
 import { formatRelativeDate } from "@/utils/format";
+import { ResumeEditorModal } from "@/components/resumes/ResumeEditorModal";
 
 interface ResumeCardProps {
   resume: {
@@ -18,6 +19,9 @@ interface ResumeCardProps {
     summary: string | null;
     skills: unknown;
     experience: unknown;
+    projects?: unknown;
+    education?: unknown;
+    certifications?: unknown;
     isActive?: boolean;
     createdAt: Date;
     updatedAt: Date;
@@ -110,6 +114,17 @@ export function ResumeCard({ resume, isOnly }: ResumeCardProps) {
               <span>Set as Active</span>
             </button>
           )}
+
+          <ResumeEditorModal
+            resumeId={resume.id}
+            resumeName={resume.name}
+            initialSummary={resume.summary}
+            initialSkills={resume.skills}
+            initialExperience={resume.experience}
+            initialProjects={resume.projects}
+            initialEducation={resume.education}
+            initialCertifications={resume.certifications}
+          />
 
           <Link
             href={`/resumes/${resume.id}`}

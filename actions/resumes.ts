@@ -58,6 +58,33 @@ export async function updateResumeNameAction(
   return { success: true };
 }
 
+export async function updateResumeContentAction(
+  resumeId: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  data: any
+): Promise<ActionResult> {
+  const userId = await getRequiredUserId();
+  const resume = await prisma.resume.findFirst({ where: { id: resumeId, userId } });
+  if (!resume) return { success: false, error: "Resume not found" };
+
+  await prisma.resume.update({
+    where: { id: resumeId },
+    data: {
+      summary: data.summary || null,
+      skills: data.skills || undefined,
+      experience: data.experience || undefined,
+      projects: data.projects || undefined,
+      education: data.education || undefined,
+      certifications: data.certifications || undefined,
+      achievements: data.achievements || undefined,
+    },
+  });
+
+  revalidatePath("/resumes");
+  revalidatePath(`/resumes/${resumeId}`);
+  return { success: true };
+}
+
 export async function deleteResumeAction(resumeId: string): Promise<ActionResult> {
   const userId = await getRequiredUserId();
   const resume = await prisma.resume.findFirst({ where: { id: resumeId, userId } });

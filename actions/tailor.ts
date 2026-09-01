@@ -9,6 +9,127 @@ import type { ActionResult } from "./auth";
 
 export type { ActionResult };
 
+export async function getActiveResumeDataAction(): Promise<
+  ActionResult & { resumeData?: ResumeData; resumeId?: string; resumeName?: string }
+> {
+  const userId = await getRequiredUserId();
+  const activeResume = await prisma.resume.findFirst({
+    where: { userId, isActive: true },
+    orderBy: { createdAt: "desc" },
+  });
+
+  if (!activeResume) {
+    return { success: false, error: "No active resume found" };
+  }
+
+  const resumeData: ResumeData = {
+    summary: activeResume.summary ?? undefined,
+    skills: (activeResume.skills as unknown as ResumeData["skills"]) || { technical: [], soft: [] },
+    experience: (activeResume.experience as unknown as ResumeData["experience"]) || [],
+    projects: (activeResume.projects as unknown as ResumeData["projects"]) || [],
+    education: (activeResume.education as unknown as ResumeData["education"]) || [],
+    certifications: (activeResume.certifications as unknown as ResumeData["certifications"]) || [],
+    achievements: (activeResume.achievements as unknown as string[]) || [],
+  };
+
+  return {
+    success: true,
+    resumeData,
+    resumeId: activeResume.id,
+    resumeName: activeResume.name,
+  };
+}
+
+export async function updateMasterResumeAndProfileAction(
+  data: ResumeData
+): Promise<ActionResult & { resumeId?: string }> {
+  const userId = await getRequiredUserId();
+
+  let activeResume = await prisma.resume.findFirst({
+    where: { userId, isActive: true },
+    orderBy: { createdAt: "desc" },
+  });
+
+  if (!activeResume) {
+    activeResume = await prisma.resume.findFirst({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
+  if (!activeResume) {
+    activeResume = await prisma.resume.create({
+      data: {
+        userId,
+        name: "Master Resume (Edited)",
+        resumeType: "MASTER",
+        summary: data.summary || null,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        skills: (data.skills ?? undefined) as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        experience: (data.experience ?? undefined) as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        projects: (data.projects ?? undefined) as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        education: (data.education ?? undefined) as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        certifications: (data.certifications ?? undefined) as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        achievements: (data.achievements ?? undefined) as any,
+        isActive: true,
+      },
+    });
+  } else {
+    activeResume = await prisma.resume.update({
+      where: { id: activeResume.id },
+      data: {
+        summary: data.summary || null,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        skills: (data.skills ?? undefined) as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        experience: (data.experience ?? undefined) as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        projects: (data.projects ?? undefined) as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        education: (data.education ?? undefined) as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        certifications: (data.certifications ?? undefined) as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        achievements: (data.achievements ?? undefined) as any,
+      },
+    });
+  }
+
+  // Sync technical skills into Profile and ProfileSkill relations
+  const techSkills = data.skills?.technical || [];
+  if (techSkills.length > 0) {
+    const profile = await prisma.profile.findUnique({ where: { userId } });
+    if (profile) {
+      for (const skill of techSkills) {
+        const existing = await prisma.profileSkill.findFirst({
+          where: { profileId: profile.id, name: { equals: skill, mode: "insensitive" } },
+        });
+        if (!existing) {
+          await prisma.profileSkill.create({
+            data: {
+              profileId: profile.id,
+              name: skill,
+              level: "INTERMEDIATE",
+            },
+          });
+        }
+      }
+    }
+  }
+
+  revalidatePath("/resumes");
+  revalidatePath("/profile");
+  revalidatePath("/auto-apply");
+  revalidatePath("/jobs");
+
+  return { success: true, resumeId: activeResume.id };
+}
+
 export async function tailorResumeAction(
   jobId: string,
   focusAreas?: string[]

@@ -2,8 +2,9 @@ import { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import prisma from "@/lib/db/client";
 import { getRequiredUserId } from "@/lib/auth/session";
-import { Printer, ArrowLeft, Download, FileText } from "lucide-react";
+import { ArrowLeft, Download, FileText } from "lucide-react";
 import Link from "next/link";
+import { PrintResumeButton } from "@/components/resumes/PrintResumeButton";
 import type { ResumeData } from "@/types/resume";
 
 export const metadata: Metadata = { title: "ATS Resume Preview | JobPilot AI" };
@@ -50,15 +51,7 @@ export default async function ResumeViewPage({
           <span className="text-xs text-slate-400">
             Version: <strong className="text-white">{resume.name}</strong> ({resume.resumeType})
           </span>
-          <button
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            onClick={undefined}
-            className="btn-primary text-xs flex items-center gap-1.5"
-            id="print-btn"
-          >
-            <Printer size={14} />
-            <span>Print / Save as PDF</span>
-          </button>
+          <PrintResumeButton />
         </div>
       </div>
 

@@ -25,6 +25,8 @@ import {
   tailorResumeAction,
   saveTailoredResumeAction,
   analyzeJobForTailoringAction,
+  getActiveResumeDataAction,
+  updateMasterResumeAndProfileAction,
   JdAnalysisData
 } from "@/actions/tailor";
 import type { ResumeData } from "@/types/resume";
@@ -60,6 +62,8 @@ export function TailorResumeModal({
   // Tailoring & Generating State
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isMasterSaving, setIsMasterSaving] = useState(false);
+  const [masterSavedSuccess, setMasterSavedSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Selected skills / focus areas to emphasize
@@ -86,13 +90,21 @@ export function TailorResumeModal({
     setIsOpen(true);
     setError(null);
     setSavedResumeId(null);
+    setMasterSavedSuccess(false);
     setActiveTab("analysis");
     setSelectedFocusSkills([...requiredSkills]);
     if (onOpenCallback) onOpenCallback();
 
     setIsAnalyzing(true);
-    const analysisRes = await analyzeJobForTailoringAction(jobId);
+    const [activeRes, analysisRes] = await Promise.all([
+      getActiveResumeDataAction(),
+      analyzeJobForTailoringAction(jobId),
+    ]);
     setIsAnalyzing(false);
+
+    if (activeRes.success && activeRes.resumeData) {
+      setTailoredData(activeRes.resumeData);
+    }
     if (analysisRes.success && analysisRes.analysis) {
       setJdAnalysis(analysisRes.analysis);
     }
@@ -137,7 +149,7 @@ export function TailorResumeModal({
     }
   };
 
-  // 2. Save Edited Tailored Resume to Database
+  // 2. Save Edited Tailored Resume to Database (Linked to this Job Application)
   const handleSaveTailoredResume = async () => {
     if (!tailoredData) return;
     setIsSaving(true);
@@ -154,6 +166,23 @@ export function TailorResumeModal({
       setError(res.error || "Failed to save tailored resume");
     } else {
       setSavedResumeId(res.resumeId);
+    }
+  };
+
+  // 3. Save directly to Master Resume & Profile (Global across account)
+  const handleUpdateMasterResume = async () => {
+    if (!tailoredData) return;
+    setIsMasterSaving(true);
+    setError(null);
+
+    const res = await updateMasterResumeAndProfileAction(tailoredData);
+    setIsMasterSaving(false);
+
+    if (!res.success) {
+      setError(res.error || "Failed to update master resume");
+    } else {
+      setMasterSavedSuccess(true);
+      setTimeout(() => setMasterSavedSuccess(false), 4000);
     }
   };
 
@@ -716,51 +745,87 @@ export function TailorResumeModal({
         {/* Modal Footer Actions */}
         <div className="p-4 sm:p-5 border-t border-slate-800 bg-[#0f172a] shrink-0 flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-2">
-            {savedResumeId && (
+            {savedResumeId ? (
               <Link
                 href={`/resumes/${savedResumeId}`}
                 target="_blank"
                 className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-blue-400 hover:text-blue-300 font-semibold text-xs transition-all flex items-center gap-1.5 shadow-sm"
               >
                 <Printer size={14} />
-                <span>Preview &amp; Save ATS PDF</span>
+                <span>Download / Print ATS PDF</span>
               </Link>
+            ) : tailoredData && (
+              <button
+                type="button"
+                onClick={() => setActiveTab("preview")}
+                className="px-3.5 py-2 rounded-lg bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white font-medium text-xs transition-all flex items-center gap-1.5"
+              >
+                <Eye size={13} />
+                <span>Preview ATS Sheet</span>
+              </button>
             )}
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5 flex-wrap">
             <button
               type="button"
               onClick={handleClose}
-              className="px-4 py-2 rounded-lg bg-transparent hover:bg-slate-800 text-slate-400 hover:text-white font-medium text-xs transition-all"
+              className="px-3.5 py-2 rounded-lg bg-transparent hover:bg-slate-800 text-slate-400 hover:text-white font-medium text-xs transition-all cursor-pointer"
             >
               Close
             </button>
 
             {tailoredData && (
-              <button
-                type="button"
-                onClick={handleSaveTailoredResume}
-                disabled={isSaving}
-                className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-emerald-600/30 transition-all cursor-pointer"
-              >
-                {isSaving ? (
-                  <>
-                    <Loader2 size={15} className="animate-spin" />
-                    <span>Saving Resume...</span>
-                  </>
-                ) : savedResumeId ? (
-                  <>
-                    <Check size={15} />
-                    <span>✅ Saved &amp; Set for this Job!</span>
-                  </>
-                ) : (
-                  <>
-                    <Check size={15} />
-                    <span>💾 Save Tailored Resume &amp; Set for this Job</span>
-                  </>
-                )}
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={handleUpdateMasterResume}
+                  disabled={isMasterSaving}
+                  className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-purple-500/50 text-purple-300 font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-sm"
+                  title="Save these edits directly to your master resume & update profile skills"
+                >
+                  {isMasterSaving ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin text-purple-400" />
+                      <span>Updating Master...</span>
+                    </>
+                  ) : masterSavedSuccess ? (
+                    <>
+                      <Check size={14} className="text-purple-400" />
+                      <span>✅ Master Resume &amp; Profile Updated!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles size={14} className="text-purple-400" />
+                      <span>🌟 Save to Master Resume &amp; Profile</span>
+                    </>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleSaveTailoredResume}
+                  disabled={isSaving}
+                  className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-emerald-600/30 transition-all cursor-pointer"
+                >
+                  {isSaving ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin" />
+                      <span>Saving Tailored...</span>
+                    </>
+                  ) : savedResumeId ? (
+                    <>
+                      <Check size={14} />
+                      <span>✅ Saved &amp; Set for this Job!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Check size={14} />
+                      <span>💾 Save Tailored Resume for this Job</span>
+                    </>
+                  )}
+                </button>
+              </>
             )}
           </div>
         </div>

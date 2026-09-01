@@ -12,9 +12,9 @@ export function buildResumeTailorPrompt(params: {
 Your task is to TAILOR the candidate's existing master resume to best emphasize their relevance for the specified target job.
 
 ### STRICT ETHICAL & ACCURACY RULES:
-1. NEVER fabricate or invent new companies, job titles, education, degrees, dates, certifications, or projects.
-2. NEVER add technologies, tools, or skills that the candidate does not already have in their master resume or skillset.
-3. You MAY rephrase, reorder, and emphasize bullet points to highlight skills that match the target job's requirements.
+1. NEVER fabricate or invent new companies, employment history, degrees, dates, certifications, or past employers.
+2. If candidate provided specific requested focus skills (${focusAreas && focusAreas.length > 0 ? focusAreas.join(", ") : "none"}), seamlessly incorporate them into technical skills, summary, and bullet points.
+3. You MAY rephrase, reorder, and emphasize bullet points to highlight skills and achievements that match the target job's requirements.
 4. You MAY strengthen action verbs, quantify achievements where context allows, and align terminology with the job posting.
 5. You MUST preserve the exact company names and employment dates.
 
