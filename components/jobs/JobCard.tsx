@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Building2, MapPin, DollarSign, Bookmark, Trash2, Eye, Sparkles, ExternalLink, Calendar, Clock } from "lucide-react";
 import { formatRelativeDate } from "@/utils/format";
 import { toggleSaveJobAction, deleteJobAction } from "@/actions/jobs";
+import { TailorResumeModal } from "@/components/resumes/TailorResumeModal";
 import type { Job, AIAnalysis } from "@prisma/client";
 
 interface Props {
@@ -154,13 +155,22 @@ export function JobCard({ job, onSelect }: Props) {
         </div>
 
         <div className="flex items-center gap-2">
+          <div onClick={(e) => e.stopPropagation()}>
+            <TailorResumeModal
+              jobId={job.id}
+              jobTitle={job.title}
+              companyName={job.companyName}
+              requiredSkills={job.requiredSkills}
+              preferredSkills={job.preferredSkills}
+            />
+          </div>
           {job.applicationUrl && (
             <a
               href={job.applicationUrl}
               target="_blank"
               rel="noopener noreferrer"
               onClick={(e) => e.stopPropagation()}
-              className="text-blue-400 hover:text-blue-300 flex items-center gap-1"
+              className="text-blue-400 hover:text-blue-300 flex items-center gap-1 font-medium"
             >
               <span>Apply</span>
               <ExternalLink size={12} />
