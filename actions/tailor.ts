@@ -178,39 +178,102 @@ export async function saveTailoredResumeAction(
   jobId: string,
   tailoredData: ResumeData,
   resumeName?: string
-): Promise<ActionResult & { resumeId?: string; applicationId?: string }> {
+): Promise<ActionResult & { resumeId?: string; applicationId?: string; targetResumeName?: string }> {
   const userId = await getRequiredUserId();
 
   const job = await prisma.job.findFirst({ where: { id: jobId, userId } });
   if (!job) return { success: false, error: "Job not found" };
 
-  const name = resumeName || `Tailored: ${job.title} at ${job.companyName}`;
-
-  // 1. Create Tailored Resume in DB
-  const savedResume = await prisma.resume.create({
-    data: {
-      userId,
-      name,
-      resumeType: "TAILORED",
-      targetRole: job.title,
-      summary: tailoredData.summary ?? null,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      skills: (tailoredData.skills ?? undefined) as any,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      experience: (tailoredData.experience ?? undefined) as any,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      projects: (tailoredData.projects ?? undefined) as any,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      education: (tailoredData.education ?? undefined) as any,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      certifications: (tailoredData.certifications ?? undefined) as any,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      achievements: (tailoredData.achievements ?? undefined) as any,
-      isActive: true,
-    },
+  // 1. Find user's active / master custom uploaded resume
+  let targetResume = await prisma.resume.findFirst({
+    where: { userId, resumeType: "MASTER", isActive: true },
+    orderBy: { createdAt: "desc" },
   });
 
-  // 2. Link or Create Application
+  if (!targetResume) {
+    targetResume = await prisma.resume.findFirst({
+      where: { userId, isActive: true },
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
+  if (!targetResume) {
+    targetResume = await prisma.resume.findFirst({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
+  if (!targetResume) {
+    // If no resume existed, create the master resume
+    targetResume = await prisma.resume.create({
+      data: {
+        userId,
+        name: resumeName || "My Master Resume",
+        resumeType: "MASTER",
+        targetRole: job.title,
+        summary: tailoredData.summary ?? null,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        skills: (tailoredData.skills ?? undefined) as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        experience: (tailoredData.experience ?? undefined) as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        projects: (tailoredData.projects ?? undefined) as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        education: (tailoredData.education ?? undefined) as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        certifications: (tailoredData.certifications ?? undefined) as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        achievements: (tailoredData.achievements ?? undefined) as any,
+        isActive: true,
+      },
+    });
+  } else {
+    // 2. Directly update the custom uploaded resume in-place
+    targetResume = await prisma.resume.update({
+      where: { id: targetResume.id },
+      data: {
+        summary: tailoredData.summary ?? targetResume.summary,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        skills: (tailoredData.skills ?? undefined) as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        experience: (tailoredData.experience ?? undefined) as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        projects: (tailoredData.projects ?? undefined) as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        education: (tailoredData.education ?? undefined) as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        certifications: (tailoredData.certifications ?? undefined) as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        achievements: (tailoredData.achievements ?? undefined) as any,
+        isActive: true,
+      },
+    });
+  }
+
+  // 3. Sync newly added technical skills into candidate Profile and ProfileSkill table
+  const techSkills = tailoredData.skills?.technical || [];
+  if (techSkills.length > 0) {
+    const profile = await prisma.profile.findUnique({ where: { userId } });
+    if (profile) {
+      for (const skill of techSkills) {
+        const existing = await prisma.profileSkill.findFirst({
+          where: { profileId: profile.id, name: { equals: skill, mode: "insensitive" } },
+        });
+        if (!existing) {
+          await prisma.profileSkill.create({
+            data: {
+              profileId: profile.id,
+              name: skill,
+              level: "INTERMEDIATE",
+            },
+          });
+        }
+      }
+    }
+  }
+
+  // 4. Link or Update Application record
   let application = await prisma.application.findFirst({
     where: { userId, jobId },
   });
@@ -219,8 +282,8 @@ export async function saveTailoredResumeAction(
     application = await prisma.application.update({
       where: { id: application.id },
       data: {
-        resumeId: savedResume.id,
-        tailoredResumeId: savedResume.id,
+        resumeId: targetResume.id,
+        tailoredResumeId: targetResume.id,
         tailoredSummary: tailoredData.summary || null,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         tailoredSkills: tailoredData.skills as any,
@@ -234,8 +297,8 @@ export async function saveTailoredResumeAction(
       data: {
         userId,
         jobId,
-        resumeId: savedResume.id,
-        tailoredResumeId: savedResume.id,
+        resumeId: targetResume.id,
+        tailoredResumeId: targetResume.id,
         tailoredSummary: tailoredData.summary || null,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         tailoredSkills: tailoredData.skills as any,
@@ -247,13 +310,17 @@ export async function saveTailoredResumeAction(
   }
 
   revalidatePath("/resumes");
+  revalidatePath(`/resumes/${targetResume.id}`);
   revalidatePath("/applications");
   revalidatePath("/jobs");
+  revalidatePath("/auto-apply");
+  revalidatePath("/profile");
 
   return {
     success: true,
-    resumeId: savedResume.id,
+    resumeId: targetResume.id,
     applicationId: application.id,
+    targetResumeName: targetResume.name,
   };
 }
 

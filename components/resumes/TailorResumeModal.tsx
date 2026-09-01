@@ -776,56 +776,30 @@ export function TailorResumeModal({
             </button>
 
             {tailoredData && (
-              <>
-                <button
-                  type="button"
-                  onClick={handleUpdateMasterResume}
-                  disabled={isMasterSaving}
-                  className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-purple-500/50 text-purple-300 font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-sm"
-                  title="Save these edits directly to your master resume & update profile skills"
-                >
-                  {isMasterSaving ? (
-                    <>
-                      <Loader2 size={14} className="animate-spin text-purple-400" />
-                      <span>Updating Master...</span>
-                    </>
-                  ) : masterSavedSuccess ? (
-                    <>
-                      <Check size={14} className="text-purple-400" />
-                      <span>✅ Master Resume &amp; Profile Updated!</span>
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles size={14} className="text-purple-400" />
-                      <span>🌟 Save to Master Resume &amp; Profile</span>
-                    </>
-                  )}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleSaveTailoredResume}
-                  disabled={isSaving}
-                  className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-emerald-600/30 transition-all cursor-pointer"
-                >
-                  {isSaving ? (
-                    <>
-                      <Loader2 size={14} className="animate-spin" />
-                      <span>Saving Tailored...</span>
-                    </>
-                  ) : savedResumeId ? (
-                    <>
-                      <Check size={14} />
-                      <span>✅ Saved &amp; Set for this Job!</span>
-                    </>
-                  ) : (
-                    <>
-                      <Check size={14} />
-                      <span>💾 Save Tailored Resume for this Job</span>
-                    </>
-                  )}
-                </button>
-              </>
+              <button
+                type="button"
+                onClick={handleSaveTailoredResume}
+                disabled={isSaving}
+                className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-emerald-600/30 transition-all cursor-pointer"
+                title="Saves all extra skills, summary, and bullet points directly into your custom uploaded resume and links it to this application"
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin" />
+                    <span>Saving to Resume...</span>
+                  </>
+                ) : savedResumeId ? (
+                  <>
+                    <Check size={14} />
+                    <span>✅ Saved to Your Custom Resume &amp; Set for this Job!</span>
+                  </>
+                ) : (
+                  <>
+                    <Check size={14} />
+                    <span>💾 Save Extra Details into My Resume</span>
+                  </>
+                )}
+              </button>
             )}
           </div>
         </div>
