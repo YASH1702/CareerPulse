@@ -9,6 +9,7 @@ import { runAutoScrapeAction, SourcingResult } from "@/actions/scraper";
 import { STATE_KEYWORD_MAP } from "@/lib/jobs/locations";
 import { RecruiterOutreachModal } from "@/components/jobs/RecruiterOutreachModal";
 import { InterviewPrepModal } from "@/components/jobs/InterviewPrepModal";
+import { TailorResumeModal } from "@/components/resumes/TailorResumeModal";
 import { formatRelativeDate } from "@/utils/format";
 import type { Job, AIAnalysis, Application } from "@prisma/client";
 
@@ -310,7 +311,14 @@ export function AutoApplyQueue({ initialQueue }: Props) {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex items-center gap-2 w-full md:w-auto shrink-0 pt-2 md:pt-0">
+              <div className="flex items-center gap-2 w-full md:w-auto shrink-0 pt-2 md:pt-0 flex-wrap">
+                <TailorResumeModal
+                  jobId={job.id}
+                  jobTitle={job.title}
+                  companyName={job.companyName}
+                  requiredSkills={job.requiredSkills}
+                  preferredSkills={job.preferredSkills}
+                />
                 <RecruiterOutreachModal
                   jobId={job.id}
                   jobTitle={job.title}

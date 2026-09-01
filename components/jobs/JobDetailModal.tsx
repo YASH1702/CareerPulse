@@ -6,6 +6,7 @@ import { toggleSaveJobAction, deleteJobAction } from "@/actions/jobs";
 import { AIAnalysisPanel } from "./AIAnalysisPanel";
 import { RecruiterOutreachModal } from "./RecruiterOutreachModal";
 import { InterviewPrepModal } from "./InterviewPrepModal";
+import { TailorResumeModal } from "@/components/resumes/TailorResumeModal";
 import type { Job, AIAnalysis } from "@prisma/client";
 
 interface Props {
@@ -193,7 +194,14 @@ export function JobDetailModal({ job, onClose }: Props) {
 
         {/* Footer Actions */}
         <div className="p-5 border-t border-white/[0.06] bg-white/[0.02] flex items-center justify-between flex-wrap gap-3">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <TailorResumeModal
+              jobId={job.id}
+              jobTitle={job.title}
+              companyName={job.companyName}
+              requiredSkills={job.requiredSkills}
+              preferredSkills={job.preferredSkills}
+            />
             <RecruiterOutreachModal jobId={job.id} jobTitle={job.title} companyName={job.companyName} />
             <InterviewPrepModal jobId={job.id} jobTitle={job.title} companyName={job.companyName} />
           </div>
