@@ -113,3 +113,90 @@ export async function getAutoApplyQueueAction() {
     },
   });
 }
+
+export async function runAutoPilotBatchAction(limit: number = 5): Promise<{
+  success: boolean;
+  appliedCount: number;
+  totalAttempted: number;
+  results: Array<{ jobId: string; companyName: string; title: string; success: boolean; error?: string }>;
+  error?: string;
+}> {
+  try {
+    const userId = await getRequiredUserId();
+
+    // 1. Fetch top jobs matching in queue
+    const queue = await prisma.job.findMany({
+      where: {
+        userId,
+        jobStatus: { not: "APPLIED" },
+        isSkipped: false,
+        isFiltered: false,
+      },
+      orderBy: [
+        { matchScore: "desc" },
+        { dateDiscovered: "desc" },
+      ],
+      take: limit,
+    });
+
+    if (queue.length === 0) {
+      return { success: false, appliedCount: 0, totalAttempted: 0, results: [], error: "No eligible jobs found in queue." };
+    }
+
+    const results: Array<{ jobId: string; companyName: string; title: string; success: boolean; error?: string }> = [];
+    let appliedCount = 0;
+
+    for (const job of queue) {
+      const eligibility = await checkAutoApplyEligibility(userId, job.matchScore ?? 0, { isManualApply: true });
+      if (!eligibility.eligible) {
+        results.push({
+          jobId: job.id,
+          companyName: job.companyName,
+          title: job.title,
+          success: false,
+          error: eligibility.reason,
+        });
+        continue;
+      }
+
+      // Submit application with active resume
+      const res = await submitDirectApplication(job.id, userId);
+      if (res.success) {
+        appliedCount++;
+        results.push({
+          jobId: job.id,
+          companyName: job.companyName,
+          title: job.title,
+          success: true,
+        });
+      } else {
+        results.push({
+          jobId: job.id,
+          companyName: job.companyName,
+          title: job.title,
+          success: false,
+          error: res.error,
+        });
+      }
+    }
+
+    revalidatePath("/applications");
+    revalidatePath("/auto-apply");
+    revalidatePath("/jobs");
+
+    return {
+      success: true,
+      appliedCount,
+      totalAttempted: queue.length,
+      results,
+    };
+  } catch (err) {
+    return {
+      success: false,
+      appliedCount: 0,
+      totalAttempted: 0,
+      results: [],
+      error: err instanceof Error ? err.message : "Auto-pilot batch apply failed",
+    };
+  }
+}

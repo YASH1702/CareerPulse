@@ -4,19 +4,105 @@ import { revalidatePath } from "next/cache";
 import prisma from "@/lib/db/client";
 import { getRequiredUserId } from "@/lib/auth/session";
 import { tailorResumeWithAI } from "@/lib/ai/tailor-resume";
+import { estimateWordCount } from "@/lib/resume/parser";
 import type { ResumeData } from "@/types/resume";
 import type { ActionResult } from "./auth";
 
 export type { ActionResult };
 
+export function formatResumeToRawText(
+  data: ResumeData,
+  candidateName?: string | null,
+  headline?: string | null,
+  contactLine?: string | null
+): string {
+  const parts: string[] = [];
+  if (candidateName) parts.push(candidateName.toUpperCase());
+  if (headline) parts.push(headline);
+  if (contactLine) parts.push(contactLine);
+
+  if (data.summary) {
+    parts.push("\nPROFESSIONAL SUMMARY\n" + data.summary);
+  }
+
+  const technical = data.skills?.technical || [];
+  const soft = data.skills?.soft || [];
+  if (technical.length > 0 || soft.length > 0) {
+    parts.push("\nTECHNICAL SKILLS");
+    if (technical.length > 0) parts.push(`Core Technologies: ${technical.join(", ")}`);
+    if (soft.length > 0) parts.push(`Key Strengths: ${soft.join(", ")}`);
+  }
+
+  if (data.experience && data.experience.length > 0) {
+    parts.push("\nWORK EXPERIENCE");
+    data.experience.forEach((exp) => {
+      parts.push(`${exp.role} - ${exp.company} (${exp.startDate} - ${exp.endDate || "Present"})`);
+      if (exp.bullets && exp.bullets.length > 0) {
+        exp.bullets.forEach((b) => parts.push(`• ${b}`));
+      }
+    });
+  }
+
+  if (data.projects && data.projects.length > 0) {
+    parts.push("\nPROJECTS & TECHNICAL ARCHITECTURE");
+    data.projects.forEach((proj) => {
+      const tech = proj.technologies && proj.technologies.length > 0 ? ` | ${proj.technologies.join(", ")}` : "";
+      parts.push(`${proj.name}${tech}`);
+      if (proj.description) parts.push(proj.description);
+      if (proj.bullets && proj.bullets.length > 0) {
+        proj.bullets.forEach((b) => parts.push(`• ${b}`));
+      }
+    });
+  }
+
+  if (data.education && data.education.length > 0) {
+    parts.push("\nEDUCATION");
+    data.education.forEach((edu) => {
+      parts.push(`${edu.degree} in ${edu.field || "Engineering"} - ${edu.institution} (${edu.startYear || ""} - ${edu.endYear || "Present"})`);
+    });
+  }
+
+  if (data.certifications && data.certifications.length > 0) {
+    parts.push("\nCERTIFICATIONS");
+    data.certifications.forEach((c) => {
+      parts.push(`${c.name} - ${c.issuer || ""} (${c.year || ""})`);
+    });
+  }
+
+  return parts.join("\n");
+}
+
 export async function getActiveResumeDataAction(): Promise<
   ActionResult & { resumeData?: ResumeData; resumeId?: string; resumeName?: string }
 > {
   const userId = await getRequiredUserId();
-  const activeResume = await prisma.resume.findFirst({
-    where: { userId, isActive: true },
+
+  // Always look for user's master custom uploaded resume first
+  let activeResume = await prisma.resume.findFirst({
+    where: { userId, resumeType: "MASTER", isActive: true },
     orderBy: { createdAt: "desc" },
   });
+
+  if (!activeResume) {
+    activeResume = await prisma.resume.findFirst({
+      where: { userId, resumeType: "MASTER" },
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
+  if (!activeResume) {
+    activeResume = await prisma.resume.findFirst({
+      where: { userId, isActive: true },
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
+  if (!activeResume) {
+    activeResume = await prisma.resume.findFirst({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+    });
+  }
 
   if (!activeResume) {
     return { success: false, error: "No active resume found" };
@@ -45,8 +131,22 @@ export async function updateMasterResumeAndProfileAction(
 ): Promise<ActionResult & { resumeId?: string }> {
   const userId = await getRequiredUserId();
 
+  const [user, profile] = await Promise.all([
+    prisma.user.findUnique({ where: { id: userId } }),
+    prisma.profile.findUnique({ where: { userId } }),
+  ]);
+
+  const rawText = formatResumeToRawText(
+    data,
+    user?.name,
+    profile?.headline,
+    profile ? `${profile.location || ""} · ${profile.phone || ""}` : null
+  );
+  const wordCount = estimateWordCount(rawText);
+
+  // Target the custom uploaded master resume
   let activeResume = await prisma.resume.findFirst({
-    where: { userId, isActive: true },
+    where: { userId, resumeType: "MASTER" },
     orderBy: { createdAt: "desc" },
   });
 
@@ -57,12 +157,20 @@ export async function updateMasterResumeAndProfileAction(
     });
   }
 
+  // Deactivate any other duplicate entries
+  await prisma.resume.updateMany({
+    where: { userId },
+    data: { isActive: false },
+  });
+
   if (!activeResume) {
     activeResume = await prisma.resume.create({
       data: {
         userId,
-        name: "Master Resume (Edited)",
+        name: "My Custom Resume",
         resumeType: "MASTER",
+        rawText,
+        wordCount,
         summary: data.summary || null,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         skills: (data.skills ?? undefined) as any,
@@ -83,6 +191,8 @@ export async function updateMasterResumeAndProfileAction(
     activeResume = await prisma.resume.update({
       where: { id: activeResume.id },
       data: {
+        rawText,
+        wordCount,
         summary: data.summary || null,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         skills: (data.skills ?? undefined) as any,
@@ -96,6 +206,7 @@ export async function updateMasterResumeAndProfileAction(
         certifications: (data.certifications ?? undefined) as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         achievements: (data.achievements ?? undefined) as any,
+        isActive: true,
       },
     });
   }
@@ -123,6 +234,7 @@ export async function updateMasterResumeAndProfileAction(
   }
 
   revalidatePath("/resumes");
+  revalidatePath(`/resumes/${activeResume.id}`);
   revalidatePath("/profile");
   revalidatePath("/auto-apply");
   revalidatePath("/jobs");
@@ -181,12 +293,25 @@ export async function saveTailoredResumeAction(
 ): Promise<ActionResult & { resumeId?: string; applicationId?: string; targetResumeName?: string }> {
   const userId = await getRequiredUserId();
 
-  const job = await prisma.job.findFirst({ where: { id: jobId, userId } });
+  const [job, user, profile] = await Promise.all([
+    prisma.job.findFirst({ where: { id: jobId, userId } }),
+    prisma.user.findUnique({ where: { id: userId } }),
+    prisma.profile.findUnique({ where: { userId } }),
+  ]);
+
   if (!job) return { success: false, error: "Job not found" };
 
-  // 1. Find user's active / master custom uploaded resume
+  const rawText = formatResumeToRawText(
+    tailoredData,
+    user?.name,
+    profile?.headline,
+    profile ? `${profile.location || ""} · ${profile.phone || ""}` : null
+  );
+  const wordCount = estimateWordCount(rawText);
+
+  // 1. Find user's master custom uploaded resume
   let targetResume = await prisma.resume.findFirst({
-    where: { userId, resumeType: "MASTER", isActive: true },
+    where: { userId, resumeType: "MASTER" },
     orderBy: { createdAt: "desc" },
   });
 
@@ -204,14 +329,22 @@ export async function saveTailoredResumeAction(
     });
   }
 
+  // Deactivate any other duplicate entries
+  await prisma.resume.updateMany({
+    where: { userId },
+    data: { isActive: false },
+  });
+
   if (!targetResume) {
     // If no resume existed, create the master resume
     targetResume = await prisma.resume.create({
       data: {
         userId,
-        name: resumeName || "My Master Resume",
+        name: resumeName || "My Custom Resume",
         resumeType: "MASTER",
         targetRole: job.title,
+        rawText,
+        wordCount,
         summary: tailoredData.summary ?? null,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         skills: (tailoredData.skills ?? undefined) as any,
@@ -229,10 +362,12 @@ export async function saveTailoredResumeAction(
       },
     });
   } else {
-    // 2. Directly update the custom uploaded resume in-place
+    // 2. Directly update the custom uploaded resume in-place with all new details
     targetResume = await prisma.resume.update({
       where: { id: targetResume.id },
       data: {
+        rawText,
+        wordCount,
         summary: tailoredData.summary ?? targetResume.summary,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         skills: (tailoredData.skills ?? undefined) as any,

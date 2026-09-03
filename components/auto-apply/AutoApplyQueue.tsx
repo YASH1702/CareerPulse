@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Zap, Play, CheckCircle2, Loader2, ExternalLink, Sparkles, Building2, MapPin, DollarSign, ArrowUpDown, Filter, Calendar, Clock, FileText } from "lucide-react";
-import { executeAutoApplyForJobAction, getAutoApplyQueueAction } from "@/actions/auto-apply";
+import { executeAutoApplyForJobAction, getAutoApplyQueueAction, runAutoPilotBatchAction } from "@/actions/auto-apply";
 import { runAutoScrapeAction, SourcingResult } from "@/actions/scraper";
 import { STATE_KEYWORD_MAP } from "@/lib/jobs/locations";
 import { RecruiterOutreachModal } from "@/components/jobs/RecruiterOutreachModal";
@@ -37,6 +37,13 @@ export function AutoApplyQueue({ initialQueue }: Props) {
   const [queue, setQueue] = useState<QueuedJob[]>(initialQueue);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [isScraping, setIsScraping] = useState(false);
+  const [isAutoPiloting, setIsAutoPiloting] = useState(false);
+  const [autoPilotResult, setAutoPilotResult] = useState<{
+    success: boolean;
+    appliedCount: number;
+    totalAttempted: number;
+    error?: string;
+  } | null>(null);
   const [scrapeResult, setScrapeResult] = useState<SourcingResult | null>(null);
   const [selectedState, setSelectedState] = useState("all_india");
   const [sortBy, setSortBy] = useState<"date" | "score" | "company">("date");
@@ -98,6 +105,27 @@ export function AutoApplyQueue({ initialQueue }: Props) {
       router.refresh();
     } else {
       alert(res.error || "Auto-apply failed.");
+    }
+  };
+
+  const handleRunAutoPilot = async () => {
+    setIsAutoPiloting(true);
+    setAutoPilotResult(null);
+    try {
+      const res = await runAutoPilotBatchAction(5);
+      setAutoPilotResult(res);
+      const freshQueue = await getAutoApplyQueueAction();
+      setQueue(freshQueue as unknown as QueuedJob[]);
+      router.refresh();
+    } catch (err) {
+      setAutoPilotResult({
+        success: false,
+        appliedCount: 0,
+        totalAttempted: 0,
+        error: err instanceof Error ? err.message : "Auto-pilot run failed.",
+      });
+    } finally {
+      setIsAutoPiloting(false);
     }
   };
 
@@ -166,6 +194,26 @@ export function AutoApplyQueue({ initialQueue }: Props) {
             <span>Resumes</span>
           </Link>
 
+          {/* 1-Click Auto-Pilot Button */}
+          <button
+            onClick={handleRunAutoPilot}
+            disabled={isAutoPiloting || queue.length === 0}
+            className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-emerald-600/25 transition-all shrink-0 cursor-pointer disabled:opacity-50"
+            title="1-Click Auto-Pilot: Automatically applies to the top matching active roles in your queue"
+          >
+            {isAutoPiloting ? (
+              <>
+                <Loader2 size={13} className="animate-spin text-white" />
+                <span>Auto-Piloting (Batch Apply)...</span>
+              </>
+            ) : (
+              <>
+                <Sparkles size={13} className="text-amber-300" />
+                <span>🚀 1-Click Auto-Pilot (Batch Apply 5)</span>
+              </>
+            )}
+          </button>
+
           {/* Scrape Trigger */}
           <button
             onClick={handleRunScraper}
@@ -177,6 +225,33 @@ export function AutoApplyQueue({ initialQueue }: Props) {
           </button>
         </div>
       </div>
+
+      {/* Auto-Pilot Status Banner */}
+      {autoPilotResult && (
+        <div
+          className={`p-4 rounded-xl border text-xs flex items-center justify-between gap-3 shadow-lg ${
+            autoPilotResult.success
+              ? "bg-emerald-950/40 border-emerald-500/40 text-emerald-200"
+              : "bg-red-950/40 border-red-500/40 text-red-200"
+          }`}
+        >
+          <div className="flex items-center gap-2.5">
+            <CheckCircle2 size={16} className={autoPilotResult.success ? "text-emerald-400" : "text-red-400"} />
+            <span className="font-medium">
+              {autoPilotResult.success
+                ? `🚀 Auto-Pilot Success! Successfully submitted ${autoPilotResult.appliedCount} of ${autoPilotResult.totalAttempted} top matching jobs.`
+                : `Auto-Pilot Notice: ${autoPilotResult.error || "Some applications could not be automatically submitted."}`}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setAutoPilotResult(null)}
+            className="text-slate-400 hover:text-white font-bold px-2 py-1 rounded bg-slate-800/60 hover:bg-slate-800"
+          >
+            ✕ Dismiss
+          </button>
+        </div>
+      )}
 
       {/* Interactive Location Filter Tabs */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">

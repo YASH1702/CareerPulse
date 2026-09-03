@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import prisma from "@/lib/db/client";
 import { getRequiredUserId } from "@/lib/auth/session";
 import { deleteResumeFile } from "@/lib/storage/client";
+import { formatResumeToRawText } from "./tailor";
+import { estimateWordCount } from "@/lib/resume/parser";
 import type { ActionResult } from "./auth";
 
 export type { ActionResult };
@@ -64,12 +66,27 @@ export async function updateResumeContentAction(
   data: any
 ): Promise<ActionResult> {
   const userId = await getRequiredUserId();
-  const resume = await prisma.resume.findFirst({ where: { id: resumeId, userId } });
+  const [resume, user, profile] = await Promise.all([
+    prisma.resume.findFirst({ where: { id: resumeId, userId } }),
+    prisma.user.findUnique({ where: { id: userId } }),
+    prisma.profile.findUnique({ where: { userId } }),
+  ]);
+
   if (!resume) return { success: false, error: "Resume not found" };
+
+  const rawText = formatResumeToRawText(
+    data,
+    user?.name,
+    profile?.headline,
+    profile ? `${profile.location || ""} · ${profile.phone || ""}` : null
+  );
+  const wordCount = estimateWordCount(rawText);
 
   await prisma.resume.update({
     where: { id: resumeId },
     data: {
+      rawText,
+      wordCount,
       summary: data.summary || null,
       skills: data.skills || undefined,
       experience: data.experience || undefined,
@@ -80,8 +97,29 @@ export async function updateResumeContentAction(
     },
   });
 
+  // Sync technical skills to candidate Profile
+  const techSkills = data.skills?.technical || [];
+  if (techSkills.length > 0 && profile) {
+    for (const skill of techSkills) {
+      const existing = await prisma.profileSkill.findFirst({
+        where: { profileId: profile.id, name: { equals: skill, mode: "insensitive" } },
+      });
+      if (!existing) {
+        await prisma.profileSkill.create({
+          data: {
+            profileId: profile.id,
+            name: skill,
+            level: "INTERMEDIATE",
+          },
+        });
+      }
+    }
+  }
+
   revalidatePath("/resumes");
   revalidatePath(`/resumes/${resumeId}`);
+  revalidatePath("/profile");
+  revalidatePath("/auto-apply");
   return { success: true };
 }
 

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { FileText, Trash2, Star, ChevronDown, ChevronUp, Loader2, Edit2, Check, X, CheckCircle2 } from "lucide-react";
+import { FileText, Trash2, Star, ChevronDown, ChevronUp, Loader2, Edit2, Check, X, CheckCircle2, Printer, Sparkles } from "lucide-react";
 import { deleteResumeAction, updateResumeNameAction, setActiveResumeAction } from "@/actions/resumes";
 import { formatRelativeDate } from "@/utils/format";
 import { ResumeEditorModal } from "@/components/resumes/ResumeEditorModal";
@@ -84,13 +84,14 @@ export function ResumeCard({ resume, isOnly }: ResumeCardProps) {
                 </button>
               </div>
             )}
-            <div className="flex items-center gap-3 mt-1 flex-wrap">
+            <div className="flex items-center gap-2.5 mt-1.5 flex-wrap">
               {resume.fileName && <span className="text-slate-500 text-xs truncate">{resume.fileName}</span>}
               {resume.wordCount && <span className="text-slate-600 text-xs">{resume.wordCount} words</span>}
               <span className="text-slate-700 text-xs">{formatRelativeDate(resume.updatedAt)}</span>
-              {hasAIData && (
-                <span className="text-xs bg-blue-500/10 text-blue-400 px-1.5 py-0.5 rounded">
-                  AI extracted
+              {skills?.technical && skills.technical.length > 0 && (
+                <span className="text-[11px] bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 px-2 py-0.5 rounded-md font-semibold flex items-center gap-1">
+                  <Sparkles size={11} className="text-emerald-400" />
+                  <span>Enriched ({skills.technical.length} Skills)</span>
                 </span>
               )}
             </div>
@@ -128,14 +129,31 @@ export function ResumeCard({ resume, isOnly }: ResumeCardProps) {
 
           <Link
             href={`/resumes/${resume.id}`}
-            className="px-2.5 py-1.5 text-xs bg-blue-600/10 hover:bg-blue-600/20 border border-blue-500/20 text-blue-400 hover:text-blue-300 rounded-lg transition-colors font-medium"
+            className="px-3 py-1.5 text-xs bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors font-semibold flex items-center gap-1.5 shadow-sm"
+            title="View and print/download the full ATS-compliant PDF resume with all updated skills and details"
           >
-            ATS Print
+            <Printer size={13} />
+            <span>Download / Print ATS PDF</span>
           </Link>
+
+          <a
+            href={`/api/resumes/${resume.id}/download?format=txt`}
+            download={`${resume.name.replace(/\s+/g, "_")}_Resume.txt`}
+            className="px-2.5 py-1.5 text-xs bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white rounded-lg transition-colors font-medium flex items-center gap-1"
+            title="Download plain text ATS resume file with all current skills"
+          >
+            <span>ATS Text</span>
+          </a>
+
           {resume.fileUrl && (
-            <a href={resume.fileUrl} target="_blank" rel="noopener noreferrer"
-              className="px-2.5 py-1.5 text-xs bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.07] text-slate-400 hover:text-white rounded-lg transition-colors">
-              File
+            <a
+              href={resume.fileUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-2.5 py-1.5 text-xs bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.07] text-slate-400 hover:text-white rounded-lg transition-colors"
+              title="View original unmodified file as initially uploaded"
+            >
+              Original Upload (Raw)
             </a>
           )}
           <button onClick={() => setExpanded(!expanded)}
