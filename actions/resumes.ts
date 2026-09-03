@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import prisma from "@/lib/db/client";
 import { getRequiredUserId } from "@/lib/auth/session";
 import { deleteResumeFile } from "@/lib/storage/client";
-import { formatResumeToRawText } from "./tailor";
+import { formatResumeToRawText } from "@/lib/resume/formatter";
 import { estimateWordCount } from "@/lib/resume/parser";
 import type { ActionResult } from "./auth";
 
@@ -101,15 +101,16 @@ export async function updateResumeContentAction(
   const techSkills = data.skills?.technical || [];
   if (techSkills.length > 0 && profile) {
     for (const skill of techSkills) {
-      const existing = await prisma.profileSkill.findFirst({
+      const existing = await prisma.skill.findFirst({
         where: { profileId: profile.id, name: { equals: skill, mode: "insensitive" } },
       });
       if (!existing) {
-        await prisma.profileSkill.create({
+        await prisma.skill.create({
           data: {
             profileId: profile.id,
             name: skill,
-            level: "INTERMEDIATE",
+            proficiency: "INTERMEDIATE",
+            category: "OTHER",
           },
         });
       }

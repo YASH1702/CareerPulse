@@ -116,6 +116,7 @@ export function ResumeEditorModal({
       projects,
       education: initialEducation || [],
       certifications: initialCertifications || [],
+      achievements: [],
     };
 
     const res = await updateResumeContentAction(resumeId, updatedData);

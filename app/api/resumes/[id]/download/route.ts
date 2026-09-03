@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import prisma from "@/lib/db/client";
-import { formatResumeToRawText } from "@/actions/tailor";
+import { formatResumeToRawText } from "@/lib/resume/formatter";
 import type { ResumeData } from "@/types/resume";
 
 export async function GET(
