@@ -303,9 +303,8 @@ export function ReplicaResumeSheet({
                     </li>
                   ))}
                   {exp.techStack && (
-                    <li className="text-black leading-tight list-none -ml-4 mt-0.5">
-                      <span className="font-normal text-black mr-1">• Tech Stack:</span>
-                      <strong className="font-bold text-black">{exp.techStack}</strong>
+                    <li className="text-black font-normal leading-tight">
+                      Tech Stack: <strong className="font-bold text-black">{exp.techStack}</strong>
                     </li>
                   )}
                 </ul>
@@ -411,13 +410,13 @@ export function ReplicaResumeSheet({
         </div>
         <div className="space-y-1" style={{ fontSize: "10.7pt" }}>
           <div>
-            <strong className="font-bold text-black">Achievements :</strong>{" "}
+            <strong className="font-bold text-black">Achievements:</strong>{" "}
             <span className="text-black font-normal">
               Secured 3rd place in IDEATHON among 25+ teams by building a full-stack solution in 24 hrs.
             </span>
           </div>
           <div>
-            <strong className="font-bold text-black">Courses :</strong>{" "}
+            <strong className="font-bold text-black">Courses:</strong>{" "}
             <span className="text-black font-normal">
               Web Development Bootcamp (Udemy), 100x devs Cohort.
             </span>
