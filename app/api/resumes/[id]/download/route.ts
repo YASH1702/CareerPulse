@@ -78,37 +78,37 @@ export async function GET(
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>${candidateName} - ATS Resume</title>
+  <title>${candidateName} - Resume</title>
   <style>
-    @page { size: letter; margin: 0.5in; }
+    @page { size: letter; margin: 0.4in; }
     * { box-sizing: border-box; }
     body {
-      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-      font-size: 10.5pt;
-      line-height: 1.35;
-      color: #111827;
+      font-family: Calibri, 'Carlito', 'Segoe UI', Candara, Arial, sans-serif;
+      font-size: 10.7pt;
+      line-height: 1.32;
+      color: #000000;
       margin: 0;
       padding: 24px;
       background: #fff;
     }
-    .header { text-align: center; border-bottom: 2px solid #111827; padding-bottom: 12px; margin-bottom: 16px; }
-    .name { font-size: 20pt; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 4px 0; }
-    .headline { font-size: 11pt; font-weight: 600; color: #374151; margin: 0 0 4px 0; }
-    .contact { font-size: 9pt; color: #4b5563; }
+    .header { text-align: center; margin-bottom: 12px; }
+    .name { font-size: 22pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 4px 0; }
+    .contact { font-size: 10.7pt; color: #000; display: flex; justify-content: center; gap: 14px; flex-wrap: wrap; }
+    .contact a { color: #0000ff; text-decoration: none; }
+    .contact a:hover { text-decoration: underline; }
     .section-title {
-      font-size: 10pt;
-      font-weight: 800;
+      font-size: 12.7pt;
+      font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
-      border-bottom: 1px solid #111827;
-      margin: 14px 0 6px 0;
+      border-bottom: 2.5px solid #000;
+      margin: 12px 0 6px 0;
       padding-bottom: 2px;
     }
-    .exp-item, .proj-item { margin-bottom: 10px; }
-    .row-between { display: flex; justify-content: space-between; font-weight: 700; font-size: 10pt; }
-    .date { font-weight: 400; color: #4b5563; font-size: 9pt; }
-    ul { margin: 4px 0 6px 0; padding-left: 18px; }
-    li { margin-bottom: 2px; font-size: 9.5pt; color: #1f2937; }
+    .row-between { display: flex; justify-content: space-between; align-items: baseline; font-size: 10.7pt; }
+    ul { margin: 2px 0 4px 0; padding-left: 28px; }
+    li { margin-bottom: 2px; font-size: 10.7pt; color: #000; }
+    .skills-row { display: flex; margin-bottom: 2px; font-size: 10.7pt; }
+    .skills-label { font-weight: 700; min-width: 130px; }
     .print-bar {
       position: fixed;
       top: 10px;
@@ -125,7 +125,6 @@ export async function GET(
       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
       z-index: 1000;
       font-weight: 600;
-      text-decoration: none;
     }
     @media print {
       body { padding: 0; }
@@ -138,78 +137,120 @@ export async function GET(
 
   <div class="header">
     <h1 class="name">${candidateName}</h1>
-    ${profile?.headline ? `<div class="headline">${profile.headline}</div>` : ""}
     <div class="contact">
-      ${user?.email || ""} ${profile?.phone ? `• ${profile.phone}` : ""} ${profile?.location ? `• ${profile.location}` : ""}
-      ${profile?.linkedinUrl ? `• LinkedIn: ${profile.linkedinUrl}` : ""}
-      ${profile?.githubUrl ? `• GitHub: ${profile.githubUrl}` : ""}
+      <span>📞 +91 6375278279</span>
+      <a href="mailto:${user?.email || "yashwantkariha1@gmail.com"}">✉️ ${user?.email || "yashwantkariha1@gmail.com"}</a>
+      <a href="${profile?.linkedinUrl || "https://www.linkedin.com/in/yashwant-kariha-740630207/"}" target="_blank">LinkedIn</a>
+      <a href="${profile?.githubUrl || "https://github.com/YASH1702"}" target="_blank">GitHub</a>
+      <a href="${profile?.portfolioUrl || "https://vscode-portfolio-main-blush.vercel.app/"}" target="_blank">Portfolio</a>
     </div>
   </div>
 
-  ${resume.summary ? `
   <div class="section-title">Professional Summary</div>
-  <p style="margin: 4px 0 8px 0; font-size: 9.5pt; color: #374151;">${resume.summary}</p>
-  ` : ""}
-
-  ${skills.technical && skills.technical.length > 0 ? `
-  <div class="section-title">Technical Competencies</div>
-  <p style="margin: 4px 0 8px 0; font-size: 9.5pt; color: #1f2937;">
-    <strong>Core Technologies:</strong> ${skills.technical.join(", ")}
-    ${skills.soft && skills.soft.length > 0 ? `<br><strong>Key Strengths:</strong> ${skills.soft.join(", ")}` : ""}
+  <p style="margin: 4px 0 8px 0; font-size: 12pt; line-height: 1.32;">
+    ${resume.summary || "Web Developer with 1+ years of experience, skilled in React, Node.js, Express, and MongoDB, with expertise in building responsive, secure, and scalable web applications. Experienced in API integration, modern UI/UX design with Tailwind CSS, and AI-powered solutions."}
   </p>
-  ` : ""}
 
-  ${exp.length > 0 ? `
-  <div class="section-title">Work Experience</div>
-  ${exp.map((e: any) => `
-    <div class="exp-item">
-      <div class="row-between">
-        <span>${e.role} · <span style="font-weight: 600;">${e.company}</span></span>
-        <span class="date">${e.startDate} – ${e.endDate || (e.current ? "Present" : "Present")} ${e.location ? `| ${e.location}` : ""}</span>
-      </div>
-      ${e.bullets && e.bullets.length > 0 ? `
-        <ul>
-          ${e.bullets.map((b: string) => `<li>${b}</li>`).join("")}
-        </ul>
-      ` : ""}
+  <div class="section-title">Technical Skills</div>
+  <div>
+    <div class="skills-row"><span class="skills-label">Frontend :</span><span>JavaScript, React.js, TypeScript, Tailwind CSS, Redux, Zustand, Material UI, Cross-platform, HTML, CSS</span></div>
+    <div class="skills-row"><span class="skills-label">Backend :</span><span>Node.js, Express.js, RESTful APIs, JWT Authentication, Socket.io, WebSocket</span></div>
+    <div class="skills-row"><span class="skills-label">Databases :</span><span>MongoDB, Mongoose, MySQL (basic), PostgreSQL (basic)</span></div>
+    <div class="skills-row"><span class="skills-label">Tools & Platforms :</span><span>Git, GitHub, Vite, Figma</span></div>
+    <div class="skills-row"><span class="skills-label">Cloud & DevOps :</span><span>AWS (beginner), Docker, Linux, CI/CD Pipelines (basic), DevOps Fundamentals</span></div>
+    <div class="skills-row"><span class="skills-label">Other :</span><span>Web Security Practices, OpenAI API</span></div>
+  </div>
+
+  <div class="section-title">Experience</div>
+  <div style="margin-bottom: 8px;">
+    <div class="row-between">
+      <span><strong>GYMYAK Pvt. Ltd.</strong> - Frontend / Full Stack Developer</span>
+      <span style="font-weight: 700;">June 2024 – Aug 25</span>
+    </div>
+    <ul>
+      <li>Delivered and maintained the e-commerce website, improving load speed by ~20%.</li>
+      <li>Converted Figma designs into a responsive interface with React + Tailwind CSS.</li>
+      <li>Linked backend APIs via Node.js, MongoDB, and Axios to enable core features.</li>
+      <li style="list-style: none; margin-left: -16px; margin-top: 2px;">• Tech Stack: <strong>React, Tailwind CSS, Figma, Node.js, MongoDB, Axios, Javascript, HTML, CSS</strong></li>
+    </ul>
+  </div>
+  <div style="margin-bottom: 8px;">
+    <div class="row-between">
+      <span><strong>Grras Solutions Pvt. Ltd.</strong> - Python Web Developer Intern</span>
+      <span style="font-weight: 700;">Jan 2022 – Jun 22</span>
+    </div>
+    <ul>
+      <li>Constructed efficient APIs leveraging Django and PostgreSQL for interactive applications.</li>
+      <li>Achieved 30% faster query execution through indexing and caching on high-load database endpoints.</li>
+      <li>Delivered interactive CRUD solutions that improved reporting workflows and overall client satisfaction.</li>
+      <li style="list-style: none; margin-left: -16px; margin-top: 2px;">• Tech Stack: <strong>Python, Django, PostgreSQL, RESTful APIs</strong></li>
+    </ul>
+  </div>
+
+  <div class="section-title">Projects ( Client & Academic )</div>
+  ${(proj.length > 0 ? proj : [
+    {
+      name: "AI Automation Platform - AI automation platform using Next.js, TypeScript, OpenAI, Prisma, and PostgreSQL",
+      bullets: ["Built AI-powered workflows to automate repetitive business tasks.", "Developed responsive dashboards with authentication and automated workflows."]
+    },
+    {
+      name: "CipherBox - Password Manager using React, Tailwind CSS, Express.js, MongoDB",
+      bullets: ["Implemented authentication and CRUD operations for credential management.", "Built a responsive UI with secure MongoDB data handling."]
+    },
+    {
+      name: "FanConnect - Subscription Platform using Next.js, TypeScript, Tailwind CSS, MongoDB",
+      bullets: ["Built authentication, subscriptions, and payment features.", "Developed responsive UI with role-based access control."]
+    },
+    {
+      name: "Job Tracker - Job Application Platform using TypeScript, React, Express",
+      bullets: ["Integrated AI to analyze resumes and match job descriptions.", "Built responsive UI and scalable APIs for application tracking."]
+    }
+  ]).map((p: any) => `
+    <div style="margin-bottom: 6px;">
+      <div style="font-weight: 700; font-size: 10.7pt;">${p.name}</div>
+      <ul>
+        ${(p.bullets || [p.description]).map((b: string) => `<li>${b}</li>`).join("")}
+      </ul>
     </div>
   `).join("")}
-  ` : ""}
 
-  ${proj.length > 0 ? `
-  <div class="section-title">Key Projects & Technical Architecture</div>
-  ${proj.map((p: any) => `
-    <div class="proj-item">
-      <div class="row-between">
-        <span>${p.name}</span>
-        <span class="date">${(p.technologies || []).join(", ")}</span>
-      </div>
-      ${p.description ? `<p style="margin: 2px 0; font-size: 9.5pt; color: #374151;">${p.description}</p>` : ""}
-      ${p.bullets && p.bullets.length > 0 ? `
-        <ul>
-          ${p.bullets.map((b: string) => `<li>${b}</li>`).join("")}
-        </ul>
-      ` : ""}
-    </div>
-  `).join("")}
-  ` : ""}
-
-  ${edu.length > 0 ? `
   <div class="section-title">Education</div>
-  ${edu.map((ed: any) => `
-    <div class="row-between" style="margin-bottom: 4px;">
-      <span><strong>${ed.degree}</strong> ${ed.field ? `in ${ed.field}` : ""} · ${ed.institution}</span>
-      <span class="date">${ed.startYear ? `${ed.startYear} - ` : ""}${ed.endYear || "Present"}</span>
+  <div style="margin-bottom: 6px;">
+    <div class="row-between">
+      <span style="font-weight: 700;">KSV University</span>
+      <span style="font-weight: 700;">Aug 2022 – Jun 2024</span>
     </div>
-  `).join("")}
-  ` : ""}
+    <div class="row-between">
+      <span>Master of Science in Information Technology - <strong>8.0 CGPA</strong></span>
+      <span style="font-style: italic; font-size: 10.1pt;">Gandhinagar, Gujarat</span>
+    </div>
+  </div>
+  <div style="margin-bottom: 6px;">
+    <div class="row-between">
+      <span style="font-weight: 700;">JECRC University</span>
+      <span style="font-style: italic;">Jaipur, Rajasthan</span>
+    </div>
+    <div class="row-between">
+      <span>Bachelor of Computer Applications - <strong>8.20 CGPA</strong></span>
+      <span style="font-weight: 700;">Jul 2019 – Jun 2022</span>
+    </div>
+  </div>
+  <div class="row-between" style="margin-bottom: 4px;">
+    <span><strong>Senior Secondary RBSE</strong> (12th) – <strong>84.33%</strong></span>
+    <span><strong style="font-style: italic; margin-right: 4px;">2018-2019</strong><span style="font-style: italic;">Kekri, Rajasthan</span></span>
+  </div>
+  <div class="row-between" style="margin-bottom: 6px;">
+    <span><strong>Secondary RBSE</strong> (10th) – <strong>85%</strong></span>
+    <span><strong style="font-style: italic; margin-right: 4px;">2016-2017</strong><span style="font-style: italic;">Kekri, Rajasthan</span></span>
+  </div>
 
-  ${certs.length > 0 ? `
-  <div class="section-title">Certifications & Credentials</div>
-  <ul>
-    ${certs.map((c: any) => `<li><strong>${c.name}</strong> ${c.issuer ? `· ${c.issuer}` : ""} ${c.year ? `(${c.year})` : ""}</li>`).join("")}
-  </ul>
-  ` : ""}
+  <div class="section-title">Additional Information</div>
+  <div style="font-size: 10.7pt; margin-bottom: 2px;">
+    <strong>Achievements :</strong> Secured 3rd place in IDEATHON among 25+ teams by building a full-stack solution in 24 hrs.
+  </div>
+  <div style="font-size: 10.7pt;">
+    <strong>Courses :</strong> Web Development Bootcamp (Udemy), 100x devs Cohort.
+  </div>
 </body>
 </html>`;
 

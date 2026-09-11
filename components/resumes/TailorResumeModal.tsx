@@ -31,6 +31,7 @@ import {
 } from "@/actions/tailor";
 import type { ResumeData } from "@/types/resume";
 import Link from "next/link";
+import { ReplicaResumeSheet } from "./ReplicaResumeSheet";
 
 interface Props {
   jobId: string;
@@ -645,7 +646,7 @@ export function TailorResumeModal({
               <div className="flex items-center justify-between p-3.5 bg-slate-800/80 border border-slate-700 rounded-xl">
                 <div className="flex items-center gap-2 text-xs text-slate-300 font-medium">
                   <ShieldCheck size={16} className="text-emerald-400" />
-                  <span>Exact ATS Format Sheet · What recruiter scanners and hiring managers see</span>
+                  <span>Exact Replica Sheet (Calibri) · Identical format, fonts, and word-by-word layout</span>
                 </div>
                 <button
                   type="button"
@@ -657,87 +658,15 @@ export function TailorResumeModal({
                 </button>
               </div>
 
-              {/* Clean White/Black ATS Document Sheet */}
-              <div className="bg-white text-black p-8 sm:p-12 rounded-xl shadow-2xl space-y-6 font-serif text-[12px] leading-relaxed select-text border border-slate-300">
-                {/* Header */}
-                <div className="text-center border-b border-black/20 pb-4 space-y-1">
-                  <h1 className="text-2xl font-bold tracking-tight text-black uppercase">
-                    Candidate Profile
-                  </h1>
-                  <p className="text-sm font-semibold text-slate-800">{jobTitle}</p>
-                </div>
-
-                {/* Professional Summary */}
-                {tailoredData.summary && (
-                  <div className="space-y-1">
-                    <h2 className="text-xs font-bold uppercase tracking-wider text-black border-b border-black pb-0.5">
-                      Professional Summary
-                    </h2>
-                    <p className="text-slate-800 leading-relaxed">{tailoredData.summary}</p>
-                  </div>
-                )}
-
-                {/* Technical Skills */}
-                {tailoredData.skills?.technical && tailoredData.skills.technical.length > 0 && (
-                  <div className="space-y-1">
-                    <h2 className="text-xs font-bold uppercase tracking-wider text-black border-b border-black pb-0.5">
-                      Technical Skills
-                    </h2>
-                    <p className="text-slate-800 leading-relaxed">
-                      <strong className="font-semibold text-black">Core Technologies: </strong>
-                      {tailoredData.skills.technical.join(", ")}
-                    </p>
-                  </div>
-                )}
-
-                {/* Experience */}
-                {tailoredData.experience && tailoredData.experience.length > 0 && (
-                  <div className="space-y-2">
-                    <h2 className="text-xs font-bold uppercase tracking-wider text-black border-b border-black pb-0.5">
-                      Work Experience
-                    </h2>
-                    <div className="space-y-3">
-                      {tailoredData.experience.map((exp, idx) => (
-                        <div key={idx} className="space-y-1">
-                          <div className="flex justify-between font-bold text-black">
-                            <span>{exp.role} · {exp.company}</span>
-                            <span className="font-normal text-slate-600 text-[11px]">{exp.startDate} - {exp.current ? "Present" : exp.endDate}</span>
-                          </div>
-                          <ul className="list-disc list-inside space-y-0.5 text-slate-800 text-[11.5px]">
-                            {(exp.bullets || []).map((b, bIdx) => (
-                              <li key={bIdx} className="leading-relaxed">{b}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Projects */}
-                {tailoredData.projects && tailoredData.projects.length > 0 && (
-                  <div className="space-y-2">
-                    <h2 className="text-xs font-bold uppercase tracking-wider text-black border-b border-black pb-0.5">
-                      Projects &amp; Technical Architecture
-                    </h2>
-                    <div className="space-y-3">
-                      {tailoredData.projects.map((proj, idx) => (
-                        <div key={idx} className="space-y-1">
-                          <div className="flex justify-between font-bold text-black">
-                            <span>{proj.name}</span>
-                            <span className="font-normal text-slate-600 text-[11px]">{(proj.technologies || []).join(", ")}</span>
-                          </div>
-                          <ul className="list-disc list-inside space-y-0.5 text-slate-800 text-[11.5px]">
-                            {(proj.bullets || [proj.description]).map((b, bIdx) => (
-                              <li key={bIdx} className="leading-relaxed">{b}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
+              {/* Exact Visual & Word-for-Word Replica Resume Sheet */}
+              <ReplicaResumeSheet
+                summary={tailoredData.summary}
+                skills={tailoredData.skills}
+                experience={tailoredData.experience}
+                projects={tailoredData.projects}
+                education={tailoredData.education}
+                certifications={tailoredData.certifications}
+              />
             </div>
           )}
         </div>
