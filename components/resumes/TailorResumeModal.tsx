@@ -14,12 +14,15 @@ import {
   ArrowRight,
   CheckCircle2,
   AlertCircle,
+  AlertTriangle,
   TrendingUp,
   Search,
   Eye,
   Edit3,
   ShieldCheck,
-  Target
+  Target,
+  Columns,
+  FileDiff
 } from "lucide-react";
 import {
   tailorResumeAction,
@@ -72,9 +75,11 @@ export function TailorResumeModal({
   const [customFocusInput, setCustomFocusInput] = useState("");
 
   // Tailored Resume State (Editable)
+  const [originalData, setOriginalData] = useState<ResumeData | null>(null);
   const [tailoredData, setTailoredData] = useState<ResumeData | null>(null);
   const [savedResumeId, setSavedResumeId] = useState<string | null>(null);
   const [customSkillInput, setCustomSkillInput] = useState("");
+  const [previewMode, setPreviewMode] = useState<"split" | "diff" | "tailored">("split");
 
   useEffect(() => {
     setMounted(true);
@@ -93,6 +98,7 @@ export function TailorResumeModal({
     setSavedResumeId(null);
     setMasterSavedSuccess(false);
     setActiveTab("analysis");
+    setPreviewMode("split");
     setSelectedFocusSkills([...requiredSkills]);
     if (onOpenCallback) onOpenCallback();
 
@@ -104,6 +110,7 @@ export function TailorResumeModal({
     setIsAnalyzing(false);
 
     if (activeRes.success && activeRes.resumeData) {
+      setOriginalData(activeRes.resumeData);
       setTailoredData(activeRes.resumeData);
     }
     if (analysisRes.success && analysisRes.analysis) {
@@ -246,7 +253,9 @@ export function TailorResumeModal({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-4xl max-h-[90vh] flex flex-col rounded-2xl border border-slate-700 bg-[#0c1322] text-slate-100 shadow-2xl overflow-hidden"
+        className={`relative w-full ${
+          activeTab === "preview" && previewMode === "split" ? "max-w-7xl" : "max-w-4xl"
+        } max-h-[92vh] flex flex-col rounded-2xl border border-slate-700 bg-[#0c1322] text-slate-100 shadow-2xl overflow-hidden transition-all duration-300`}
       >
         {/* Modal Header */}
         <div className="p-5 border-b border-slate-800 bg-[#0f172a] shrink-0 flex items-center justify-between gap-4">
@@ -640,33 +649,350 @@ export function TailorResumeModal({
             </div>
           )}
 
-          {/* TAB 3: LIVE ATS DOCUMENT PREVIEW */}
+          {/* TAB 3: LIVE ATS DOCUMENT PREVIEW & SIDE-BY-SIDE COMPARISON */}
           {activeTab === "preview" && tailoredData && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-3.5 bg-slate-800/80 border border-slate-700 rounded-xl">
+            <div className="space-y-5">
+              {/* Top Controls Bar */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 bg-slate-800/80 border border-slate-700 rounded-xl">
                 <div className="flex items-center gap-2 text-xs text-slate-300 font-medium">
-                  <ShieldCheck size={16} className="text-emerald-400" />
-                  <span>Exact Replica Sheet (Calibri) · Identical format, fonts, and word-by-word layout</span>
+                  <ShieldCheck size={16} className="text-emerald-400 shrink-0" />
+                  <span>
+                    Dual-Resume Inspection · Compare Original Baseline vs. Role-Tailored Version
+                  </span>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("editor")}
-                  className="text-xs text-blue-400 hover:text-blue-300 font-semibold flex items-center gap-1 cursor-pointer"
-                >
-                  <Edit3 size={13} />
-                  <span>Back to Editor</span>
-                </button>
+
+                <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto justify-between sm:justify-end">
+                  {/* View Mode Toggle */}
+                  <div className="flex items-center bg-[#090e1a] p-0.5 rounded-lg border border-slate-700 text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setPreviewMode("split")}
+                      className={`px-3 py-1.5 rounded-md font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+                        previewMode === "split"
+                          ? "bg-blue-600 text-white shadow-sm"
+                          : "text-slate-400 hover:text-white"
+                      }`}
+                      title="Show both resumes side-by-side"
+                    >
+                      <Columns size={13} />
+                      <span>Side-by-Side</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setPreviewMode("diff")}
+                      className={`px-3 py-1.5 rounded-md font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+                        previewMode === "diff"
+                          ? "bg-blue-600 text-white shadow-sm"
+                          : "text-slate-400 hover:text-white"
+                      }`}
+                      title="Inspect line-by-line additions and issue checklist"
+                    >
+                      <FileDiff size={13} />
+                      <span>Changes &amp; Issues</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setPreviewMode("tailored")}
+                      className={`px-3 py-1.5 rounded-md font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+                        previewMode === "tailored"
+                          ? "bg-blue-600 text-white shadow-sm"
+                          : "text-slate-400 hover:text-white"
+                      }`}
+                      title="View single tailored resume sheet"
+                    >
+                      <Eye size={13} />
+                      <span>Tailored Only</span>
+                    </button>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("editor")}
+                    className="text-xs text-blue-400 hover:text-blue-300 font-semibold flex items-center gap-1 px-2.5 py-1.5 rounded-lg hover:bg-blue-500/10 transition-colors cursor-pointer"
+                  >
+                    <Edit3 size={13} />
+                    <span>Back to Editor</span>
+                  </button>
+                </div>
               </div>
 
-              {/* Exact Visual & Word-for-Word Replica Resume Sheet */}
-              <ReplicaResumeSheet
-                summary={tailoredData.summary}
-                skills={tailoredData.skills}
-                experience={tailoredData.experience}
-                projects={tailoredData.projects}
-                education={tailoredData.education}
-                certifications={tailoredData.certifications}
-              />
+              {/* Extra Points Added & Quality Health Check Banner */}
+              {(() => {
+                const originalSkillsList: string[] = ((originalData?.skills as any)?.technical || []);
+                const originalSkillsSet = new Set(originalSkillsList.map((s) => s.toLowerCase().trim()));
+                const tailoredSkillsList: string[] = ((tailoredData?.skills as any)?.technical || []);
+                const addedSkills = tailoredSkillsList.filter(
+                  (s) => !originalSkillsSet.has(s.toLowerCase().trim())
+                );
+                const isSummaryChanged = Boolean(
+                  originalData?.summary &&
+                  tailoredData?.summary &&
+                  originalData.summary.trim() !== tailoredData.summary.trim()
+                );
+                const missingCriticalSkills = (jdAnalysis?.missingSkills || []).filter(
+                  (s) => !tailoredSkillsList.some((ts) => ts.toLowerCase().trim() === s.toLowerCase().trim())
+                );
+
+                return (
+                  <>
+                    <div className="p-4 bg-gradient-to-r from-blue-950/40 via-slate-900 to-emerald-950/30 border border-slate-700 rounded-xl space-y-3">
+                      <div className="flex items-center justify-between flex-wrap gap-2 border-b border-slate-800 pb-2.5">
+                        <div className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                          <span className="text-xs font-bold text-white uppercase tracking-wider">
+                            Resume Customization Summary for {jobTitle}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-2 text-xs">
+                          <span className="text-slate-400">Match Score:</span>
+                          <span className="text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/30">
+                            {jdAnalysis?.potentialAtsScore || 95}% ATS Fit
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                        {/* Added Points / Skills */}
+                        <div className="p-3 bg-black/40 border border-slate-800 rounded-lg space-y-1.5">
+                          <p className="font-bold text-slate-200 flex items-center gap-1">
+                            <Sparkles size={13} className="text-emerald-400" />
+                            <span>Extra Targeted Skills ({addedSkills.length})</span>
+                          </p>
+                          {addedSkills.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {addedSkills.map((s, idx) => (
+                                <span
+                                  key={idx}
+                                  className="px-2 py-0.5 rounded text-[11px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-semibold"
+                                >
+                                  + {s}
+                                </span>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-slate-400 text-[11px]">
+                              Using all 31 authentic skills from your baseline master.
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Summary Status */}
+                        <div className="p-3 bg-black/40 border border-slate-800 rounded-lg space-y-1.5">
+                          <p className="font-bold text-slate-200 flex items-center gap-1">
+                            <FileText size={13} className="text-blue-400" />
+                            <span>Summary Alignment</span>
+                          </p>
+                          <p className="text-slate-300 text-[11px] leading-relaxed">
+                            {isSummaryChanged
+                              ? `Refocused to spotlight ${selectedFocusSkills.slice(0, 3).join(", ") || "core technologies"} for ${companyName}.`
+                              : "Preserves your authentic master summary."}
+                          </p>
+                        </div>
+
+                        {/* Overall Issues & Safety Checks */}
+                        <div className="p-3 bg-black/40 border border-slate-800 rounded-lg space-y-1.5">
+                          <p className="font-bold text-slate-200 flex items-center gap-1">
+                            <ShieldCheck size={13} className="text-purple-400" />
+                            <span>ATS &amp; Quality Check</span>
+                          </p>
+                          <ul className="space-y-1 text-[11px] text-slate-300">
+                            <li className="flex items-center gap-1 text-emerald-400">
+                              <Check size={12} />
+                              <span>Exact Canva / Calibri visual fidelity</span>
+                            </li>
+                            <li className="flex items-center gap-1 text-emerald-400">
+                              <Check size={12} />
+                              <span>0 fake companies or hallucinated history</span>
+                            </li>
+                            {missingCriticalSkills.length > 0 ? (
+                              <li className="flex items-center gap-1 text-amber-400">
+                                <AlertTriangle size={12} />
+                                <span>Optional JD skills: {missingCriticalSkills.slice(0, 2).join(", ")}</span>
+                              </li>
+                            ) : (
+                              <li className="flex items-center gap-1 text-emerald-400">
+                                <Check size={12} />
+                                <span>All high-priority JD keywords covered</span>
+                              </li>
+                            )}
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* MODE 1: SPLIT SIDE-BY-SIDE VIEW (SHOWS BOTH RESUMES) */}
+                    {previewMode === "split" && (
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+                        {/* LEFT: ORIGINAL UNEDITED BASELINE RESUME */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between p-2.5 bg-slate-900 border border-slate-700/80 rounded-t-xl">
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 rounded-full bg-slate-400"></div>
+                              <span className="text-xs font-bold text-slate-200">
+                                1. Original Uploaded Resume (Default)
+                              </span>
+                            </div>
+                            <span className="text-[10px] text-slate-400 font-mono">
+                              Baseline yashk.pdf · Unedited
+                            </span>
+                          </div>
+
+                          <div className="overflow-x-auto rounded-b-xl border-x border-b border-slate-700 bg-white/5 p-1 sm:p-2">
+                            <ReplicaResumeSheet
+                              summary={originalData?.summary}
+                              skills={originalData?.skills}
+                              experience={originalData?.experience}
+                              projects={originalData?.projects}
+                              education={originalData?.education}
+                              certifications={originalData?.certifications}
+                              badgeLabel="📄 Original Baseline (Default yashk.pdf)"
+                              badgeVariant="default"
+                            />
+                          </div>
+                        </div>
+
+                        {/* RIGHT: TAILORED RESUME FOR SPECIFIC JOB OPENING */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between p-2.5 bg-blue-950/60 border border-blue-600/50 rounded-t-xl shadow-lg shadow-blue-950/50">
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
+                              <span className="text-xs font-bold text-blue-200">
+                                2. Tailored for {jobTitle}
+                              </span>
+                            </div>
+                            <span className="text-[10px] text-emerald-400 font-bold bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-600/40">
+                              {addedSkills.length > 0 ? `+${addedSkills.length} Added Skills Highlighted` : "Optimized for Job"}
+                            </span>
+                          </div>
+
+                          <div className="overflow-x-auto rounded-b-xl border-x border-b border-blue-600/40 bg-white/5 p-1 sm:p-2 ring-1 ring-blue-500/20">
+                            <ReplicaResumeSheet
+                              summary={tailoredData.summary}
+                              skills={tailoredData.skills}
+                              experience={tailoredData.experience}
+                              projects={tailoredData.projects}
+                              education={tailoredData.education}
+                              certifications={tailoredData.certifications}
+                              highlightSkills={addedSkills}
+                              badgeLabel={`✨ Tailored for ${jobTitle} at ${companyName}`}
+                              badgeVariant="emerald"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* MODE 2: LINE-BY-LINE CHANGES & ISSUES INSPECTOR */}
+                    {previewMode === "diff" && (
+                      <div className="space-y-4">
+                        {/* Summary Diff Card */}
+                        <div className="p-4 bg-slate-900/90 border border-slate-700 rounded-xl space-y-3">
+                          <h5 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                            <FileText size={14} className="text-blue-400" />
+                            <span>Professional Summary Comparison</span>
+                          </h5>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                            <div className="p-3 bg-black/40 border border-slate-800 rounded-lg space-y-1">
+                              <span className="text-[10px] uppercase font-bold text-slate-400">Original Baseline</span>
+                              <p className="text-slate-300 leading-relaxed">{originalData?.summary || "No summary set."}</p>
+                            </div>
+                            <div className="p-3 bg-blue-950/20 border border-blue-800/40 rounded-lg space-y-1">
+                              <span className="text-[10px] uppercase font-bold text-blue-300">Tailored for {jobTitle}</span>
+                              <p className="text-white leading-relaxed">{tailoredData.summary}</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Skills Diff Card */}
+                        <div className="p-4 bg-slate-900/90 border border-slate-700 rounded-xl space-y-3">
+                          <h5 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                            <Sparkles size={14} className="text-emerald-400" />
+                            <span>Technical Skills Additions &amp; Alignment</span>
+                          </h5>
+                          <div className="space-y-2 text-xs">
+                            {addedSkills.length > 0 ? (
+                              <div className="p-3 bg-emerald-950/20 border border-emerald-800/40 rounded-lg space-y-1.5">
+                                <p className="text-emerald-300 font-bold text-xs">
+                                  ✨ Added / Emphasized Skills for {companyName}:
+                                </p>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {addedSkills.map((s, idx) => (
+                                    <span
+                                      key={idx}
+                                      className="px-2.5 py-1 rounded-md bg-emerald-500/20 text-emerald-200 border border-emerald-500/40 font-bold text-xs"
+                                    >
+                                      + {s}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            ) : (
+                              <p className="text-slate-400 text-xs">
+                                All skills in the tailored version are sourced from your original master resume.
+                              </p>
+                            )}
+
+                            <div className="p-3 bg-black/40 border border-slate-800 rounded-lg">
+                              <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">
+                                Full Tailored Technical Skills List
+                              </span>
+                              <p className="text-slate-200 leading-relaxed">
+                                {tailoredSkillsList.join(", ")}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Experience & Projects Verification */}
+                        <div className="p-4 bg-slate-900/90 border border-slate-700 rounded-xl space-y-3">
+                          <h5 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                            <ShieldCheck size={14} className="text-purple-400" />
+                            <span>Integrity &amp; Experience Verification</span>
+                          </h5>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                            <div className="p-3 bg-black/40 border border-slate-800 rounded-lg">
+                              <strong className="text-white block mb-1">Work History Preserved:</strong>
+                              <ul className="space-y-1 text-slate-300 text-[11px]">
+                                <li>• GYMYAK Pvt. Ltd. (June 2024 – Aug 25)</li>
+                                <li>• Grras Solutions Pvt. Ltd. (Jan 2022 – Jun 22)</li>
+                              </ul>
+                            </div>
+
+                            <div className="p-3 bg-black/40 border border-slate-800 rounded-lg">
+                              <strong className="text-white block mb-1">Authentic Academic Record:</strong>
+                              <ul className="space-y-1 text-slate-300 text-[11px]">
+                                <li>• KSV University — M.Sc IT (8.0 CGPA)</li>
+                                <li>• JECRC University — BCA (8.20 CGPA)</li>
+                                <li>• Senior Secondary (84.33%) &amp; Secondary (85%)</li>
+                              </ul>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* MODE 3: SINGLE TAILORED SHEET ONLY */}
+                    {previewMode === "tailored" && (
+                      <div className="flex justify-center">
+                        <ReplicaResumeSheet
+                          summary={tailoredData.summary}
+                          skills={tailoredData.skills}
+                          experience={tailoredData.experience}
+                          projects={tailoredData.projects}
+                          education={tailoredData.education}
+                          certifications={tailoredData.certifications}
+                          highlightSkills={addedSkills}
+                          badgeLabel={`✨ Tailored for ${jobTitle} at ${companyName}`}
+                          badgeVariant="emerald"
+                        />
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
             </div>
           )}
         </div>

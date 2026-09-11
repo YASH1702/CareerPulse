@@ -16,6 +16,10 @@ interface Props {
   education?: any[];
   certifications?: any[];
   achievements?: any[];
+  highlightSkills?: string[];
+  badgeLabel?: string;
+  badgeVariant?: "default" | "emerald" | "blue";
+  scale?: "normal" | "compact";
 }
 
 export function ReplicaResumeSheet({
@@ -32,6 +36,10 @@ export function ReplicaResumeSheet({
   education = [],
   certifications = [],
   achievements = [],
+  highlightSkills = [],
+  badgeLabel,
+  badgeVariant = "default",
+  scale = "normal",
 }: Props) {
   // Default exact summary from yashk.pdf if not overridden
   const displaySummary =
@@ -155,6 +163,25 @@ export function ReplicaResumeSheet({
         lineHeight: "1.32",
       }}
     >
+      {badgeLabel && (
+        <div className="mb-3.5 print:hidden flex items-center justify-between border-b border-slate-200 pb-2">
+          <span
+            className={`px-2.5 py-1 rounded text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 ${
+              badgeVariant === "emerald"
+                ? "bg-emerald-100 text-emerald-900 border border-emerald-300"
+                : "bg-slate-100 text-slate-800 border border-slate-300"
+            }`}
+          >
+            {badgeLabel}
+          </span>
+          {highlightSkills.length > 0 && (
+            <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+              ✨ {highlightSkills.length} Tailored Skills Emphasized
+            </span>
+          )}
+        </div>
+      )}
+
       {/* 1. Header */}
       <div className="text-center mb-3">
         <h1
@@ -263,14 +290,34 @@ export function ReplicaResumeSheet({
           Technical Skills
         </div>
         <div className="space-y-0.5" style={{ fontSize: "10.7pt" }}>
-          {skillsCategorized.map((item, idx) => (
-            <div key={idx} className="flex items-start">
-              <span className="font-bold text-black shrink-0 mr-1.5" style={{ minWidth: "125px" }}>
-                {item.label}
-              </span>
-              <span className="text-black font-normal flex-1">{item.text}</span>
-            </div>
-          ))}
+          {skillsCategorized.map((item, idx) => {
+            const lowerHighlights = new Set(highlightSkills.map((h) => h.toLowerCase().trim()));
+            const parts = item.text.split(/,\s*/);
+            return (
+              <div key={idx} className="flex items-start">
+                <span className="font-bold text-black shrink-0 mr-1.5" style={{ minWidth: "125px" }}>
+                  {item.label}
+                </span>
+                <span className="text-black font-normal flex-1">
+                  {parts.map((p, pIdx) => {
+                    const isHigh = lowerHighlights.has(p.toLowerCase().trim());
+                    return (
+                      <React.Fragment key={pIdx}>
+                        {pIdx > 0 && ", "}
+                        {isHigh ? (
+                          <span className="bg-emerald-100 text-emerald-950 font-bold px-1.5 py-0.2 rounded border border-emerald-400 inline-block">
+                            {p} ✨
+                          </span>
+                        ) : (
+                          p
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
+                </span>
+              </div>
+            );
+          })}
         </div>
       </div>
 
