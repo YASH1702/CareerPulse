@@ -38,7 +38,7 @@ export function DashboardNav() {
     exact ? pathname === href : pathname === href || pathname.startsWith(href + "/");
 
   return (
-    <aside className="w-56 shrink-0 h-screen border-r border-white/[0.05] bg-[#080d1a] flex flex-col">
+    <aside className="w-56 shrink-0 h-screen border-r border-white/[0.05] bg-[#080d1a] flex flex-col print:hidden">
       {/* Logo */}
       <div className="px-4 py-5 border-b border-white/[0.05]">
         <Link href="/" className="flex items-center gap-2.5">

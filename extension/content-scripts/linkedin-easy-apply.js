@@ -27,16 +27,17 @@ function observeEasyApplyModal() {
   const modal = document.querySelector(".jobs-easy-apply-modal, .artdeco-modal");
   if (!modal) return;
 
-  chrome.storage.local.get(["autoFillEnabled"], (res) => {
+  chrome.storage.local.get(["autoFillEnabled", "jobpilot_candidate"], (res) => {
     if (res.autoFillEnabled === false) return;
+    const candidate = res.jobpilot_candidate;
 
-    // 1. Fill Text Inputs with standard defaults if empty
+    // 1. Fill Text Inputs with candidate profile if empty
     modal.querySelectorAll("input[type='text'], input[type='tel']").forEach((input) => {
       const label = (input.getAttribute("aria-label") || input.name || "").toLowerCase();
-      if (!input.value) {
-        if (label.includes("phone")) input.value = "+91 9876543210";
-        if (label.includes("experience") || label.includes("years")) input.value = "4";
-        if (label.includes("ctc") || label.includes("salary")) input.value = "2400000";
+      if (!input.value && candidate) {
+        if (label.includes("phone")) input.value = candidate.phone || "+91 6375278279";
+        if (label.includes("experience") || label.includes("years")) input.value = String(candidate.yearsExperience || 2);
+        if (label.includes("ctc") || label.includes("salary")) input.value = String(candidate.screeningAnswers?.expectedSalaryAnnual || 1200000);
         input.dispatchEvent(new Event("input", { bubbles: true }));
       }
     });

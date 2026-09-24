@@ -188,15 +188,36 @@ export async function tailorResumeAction(
 ): Promise<ActionResult & { tailoredResume?: ResumeData }> {
   const userId = await getRequiredUserId();
 
-  const [job, activeResume] = await Promise.all([
-    prisma.job.findFirst({ where: { id: jobId, userId } }),
-    prisma.resume.findFirst({
+  const job = await prisma.job.findFirst({ where: { id: jobId, userId } });
+  if (!job) return { success: false, error: "Job not found" };
+
+  // Always look for user's master custom uploaded resume first
+  let activeResume = await prisma.resume.findFirst({
+    where: { userId, resumeType: "MASTER", isActive: true },
+    orderBy: { createdAt: "desc" },
+  });
+
+  if (!activeResume) {
+    activeResume = await prisma.resume.findFirst({
+      where: { userId, resumeType: "MASTER" },
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
+  if (!activeResume) {
+    activeResume = await prisma.resume.findFirst({
       where: { userId, isActive: true },
       orderBy: { createdAt: "desc" },
-    }),
-  ]);
+    });
+  }
 
-  if (!job) return { success: false, error: "Job not found" };
+  if (!activeResume) {
+    activeResume = await prisma.resume.findFirst({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
   if (!activeResume) {
     return {
       success: false,
@@ -249,39 +270,72 @@ export async function saveTailoredResumeAction(
   );
   const wordCount = estimateWordCount(rawText);
 
-  // 1. Find user's master custom uploaded resume
-  let targetResume = await prisma.resume.findFirst({
+  // 1. Find user's master custom uploaded resume as baseline parent
+  const masterResume = await prisma.resume.findFirst({
     where: { userId, resumeType: "MASTER" },
     orderBy: { createdAt: "desc" },
   });
 
-  if (!targetResume) {
-    targetResume = await prisma.resume.findFirst({
-      where: { userId, isActive: true },
-      orderBy: { createdAt: "desc" },
-    });
-  }
-
-  if (!targetResume) {
-    targetResume = await prisma.resume.findFirst({
-      where: { userId },
-      orderBy: { createdAt: "desc" },
-    });
-  }
-
-  // Deactivate any other duplicate entries
-  await prisma.resume.updateMany({
-    where: { userId },
-    data: { isActive: false },
+  // 2. Check if a TAILORED custom resume already exists specifically for this job
+  const existingApp = await prisma.application.findFirst({
+    where: { userId, jobId },
   });
 
+  let targetResume = null;
+  if (existingApp?.tailoredResumeId) {
+    targetResume = await prisma.resume.findFirst({
+      where: { id: existingApp.tailoredResumeId, userId },
+    });
+  }
+
   if (!targetResume) {
-    // If no resume existed, create the master resume
+    targetResume = await prisma.resume.findFirst({
+      where: {
+        userId,
+        resumeType: "TAILORED",
+        targetRole: job.title,
+        name: { contains: job.companyName },
+      },
+      orderBy: { updatedAt: "desc" },
+    });
+  }
+
+  const defaultTailoredName = `Tailored: ${job.title} at ${job.companyName}`;
+
+  if (targetResume) {
+    // Update existing tailored resume
+    targetResume = await prisma.resume.update({
+      where: { id: targetResume.id },
+      data: {
+        name: resumeName || targetResume.name || defaultTailoredName,
+        targetRole: job.title,
+        rawText,
+        wordCount,
+        summary: tailoredData.summary ?? targetResume.summary,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        skills: (tailoredData.skills ?? undefined) as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        experience: (tailoredData.experience ?? undefined) as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        projects: (tailoredData.projects ?? undefined) as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        education: (tailoredData.education ?? undefined) as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        certifications: (tailoredData.certifications ?? undefined) as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        achievements: (tailoredData.achievements ?? undefined) as any,
+        resumeType: "TAILORED",
+        parentId: masterResume?.id || targetResume.parentId,
+      },
+    });
+  } else {
+    // Create new dedicated tailored custom resume specifically for this job
     targetResume = await prisma.resume.create({
       data: {
         userId,
-        name: resumeName || "My Custom Resume",
-        resumeType: "MASTER",
+        parentId: masterResume?.id || null,
+        name: resumeName || defaultTailoredName,
+        resumeType: "TAILORED",
         targetRole: job.title,
         rawText,
         wordCount,
@@ -298,31 +352,16 @@ export async function saveTailoredResumeAction(
         certifications: (tailoredData.certifications ?? undefined) as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         achievements: (tailoredData.achievements ?? undefined) as any,
-        isActive: true,
+        isActive: false, // master stays active baseline
       },
     });
-  } else {
-    // 2. Directly update the custom uploaded resume in-place with all new details
-    targetResume = await prisma.resume.update({
-      where: { id: targetResume.id },
-      data: {
-        rawText,
-        wordCount,
-        summary: tailoredData.summary ?? targetResume.summary,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        skills: (tailoredData.skills ?? undefined) as any,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        experience: (tailoredData.experience ?? undefined) as any,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        projects: (tailoredData.projects ?? undefined) as any,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        education: (tailoredData.education ?? undefined) as any,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        certifications: (tailoredData.certifications ?? undefined) as any,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        achievements: (tailoredData.achievements ?? undefined) as any,
-        isActive: true,
-      },
+  }
+
+  // Ensure master resume exists and is active
+  if (masterResume && !masterResume.isActive) {
+    await prisma.resume.update({
+      where: { id: masterResume.id },
+      data: { isActive: true },
     });
   }
 

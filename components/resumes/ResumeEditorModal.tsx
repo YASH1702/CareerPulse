@@ -9,7 +9,6 @@ import {
   Trash2,
   Loader2,
   X,
-  Printer,
   Edit3,
   Sparkles,
   CheckCircle2,

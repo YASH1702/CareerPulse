@@ -1,6 +1,47 @@
 "use client";
 
 import React from "react";
+import { Phone, Mail, Globe } from "lucide-react";
+
+function LinkedinIcon({ size = 13, className = "", style }: { size?: number; className?: string; style?: React.CSSProperties }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      style={style}
+    >
+      <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
+      <rect x="2" y="9" width="4" height="12" />
+      <circle cx="4" cy="4" r="2" />
+    </svg>
+  );
+}
+
+function GithubIcon({ size = 13, className = "", style }: { size?: number; className?: string; style?: React.CSSProperties }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      style={style}
+    >
+      <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22" />
+    </svg>
+  );
+}
 
 interface Props {
   name?: string;
@@ -17,18 +58,22 @@ interface Props {
   certifications?: any[];
   achievements?: any[];
   highlightSkills?: string[];
+  addedBullets?: string[];
+  isSummaryTailored?: boolean;
   badgeLabel?: string;
   badgeVariant?: "default" | "emerald" | "blue";
   scale?: "normal" | "compact";
+  id?: string;
 }
 
 export function ReplicaResumeSheet({
+  id = "replica-resume-sheet",
   name = "YASHWANT KARIHA",
   phone = "+91 6375278279",
   email = "yashwantkariha1@gmail.com",
   linkedinUrl = "https://www.linkedin.com/in/yashwant-kariha-740630207/",
   githubUrl = "https://github.com/YASH1702",
-  portfolioUrl = "https://vscode-portfolio-main-blush.vercel.app/",
+  portfolioUrl = "https://portfolio3-ial7sxdz4-yashwants-projects-ec1ef74c.vercel.app/",
   summary,
   skills,
   experience = [],
@@ -37,6 +82,8 @@ export function ReplicaResumeSheet({
   certifications = [],
   achievements = [],
   highlightSkills = [],
+  addedBullets = [],
+  isSummaryTailored = false,
   badgeLabel,
   badgeVariant = "default",
   scale = "normal",
@@ -44,7 +91,9 @@ export function ReplicaResumeSheet({
   // Default exact summary from yashk.pdf if not overridden
   const displaySummary =
     summary ||
-    "Web Developer with 1+ years of experience, skilled in React, Node.js, Express, and MongoDB, with expertise in building responsive, secure, and scalable web applications. Experienced in API integration, modern UI/UX design with Tailwind CSS, and AI-powered solutions.";
+    "Full-Stack Developer with 1+ years of professional experience building responsive, secure, and scalable web applications using React, Next.js, TypeScript, Node.js, and PostgreSQL/MongoDB. Experienced in RESTful API architecture, Tailwind CSS, Stripe payment workflows, and production AI-powered tools.";
+
+  const lowerAddedBullets = new Set(addedBullets.map((b) => b.trim().toLowerCase()));
 
   // Format skills by category
   let skillsCategorized: { label: string; text: string }[] = [];
@@ -53,44 +102,49 @@ export function ReplicaResumeSheet({
     if (skills.frontend || skills.backend) {
       if (skills.frontend) skillsCategorized.push({ label: "Frontend :", text: Array.isArray(skills.frontend) ? skills.frontend.join(", ") : skills.frontend });
       if (skills.backend) skillsCategorized.push({ label: "Backend :", text: Array.isArray(skills.backend) ? skills.backend.join(", ") : skills.backend });
-      if (skills.databases) skillsCategorized.push({ label: "Databases :", text: Array.isArray(skills.databases) ? skills.databases.join(", ") : skills.databases });
+      if (skills.databases || (skills as any)["databases & orm"]) skillsCategorized.push({ label: "Databases & ORM :", text: Array.isArray(skills.databases || (skills as any)["databases & orm"]) ? (skills.databases || (skills as any)["databases & orm"]).join(", ") : (skills.databases || (skills as any)["databases & orm"]) });
       if (skills.tools) skillsCategorized.push({ label: "Tools & Platforms :", text: Array.isArray(skills.tools) ? skills.tools.join(", ") : skills.tools });
       if (skills.cloud) skillsCategorized.push({ label: "Cloud & DevOps :", text: Array.isArray(skills.cloud) ? skills.cloud.join(", ") : skills.cloud });
-      if (skills.other) skillsCategorized.push({ label: "Other :", text: Array.isArray(skills.other) ? skills.other.join(", ") : skills.other });
+      if (skills.other || (skills as any).specialized) skillsCategorized.push({ label: "Specialized :", text: Array.isArray(skills.other || (skills as any).specialized) ? (skills.other || (skills as any).specialized).join(", ") : (skills.other || (skills as any).specialized) });
     } else {
       // Group standard technical array into exact Canva replica categories
       const tech: string[] = skills.technical || [];
-      const frontendSkills = tech.filter((s) => /react|javascript|typescript|tailwind|redux|zustand|material|html|css|cross-platform|frontend/i.test(s));
-      const backendSkills = tech.filter((s) => /node|express|api|jwt|auth|socket|websocket|python|django|backend/i.test(s));
-      const dbSkills = tech.filter((s) => /mongo|postgres|mysql|prisma|sql|database/i.test(s));
-      const toolSkills = tech.filter((s) => /git|github|vite|figma|postman|vscode/i.test(s));
-      const cloudSkills = tech.filter((s) => /aws|docker|linux|ci\/cd|devops/i.test(s));
-      const otherSkills = tech.filter((s) => /security|openai|ai|machine/i.test(s));
+      const frontendSkills = tech.filter((s) => /react|next|vue|angular|svelte|javascript|typescript|tailwind|redux|zustand|material|html|css|cross-platform|frontend|responsive|ui|web/i.test(s));
+      const backendSkills = tech.filter((s) => /node|express|api|rest|jwt|auth|socket|websocket|python|django|fastapi|flask|backend|graphql|nest|microservices|stripe/i.test(s));
+      const dbSkills = tech.filter((s) => /mongo|postgres|mysql|prisma|sql|database|redis|nosql|orm|dynamo|sqlite/i.test(s));
+      const toolSkills = tech.filter((s) => /git|github|vite|figma|postman|vscode|jira|webpack|npm|yarn/i.test(s));
+      const cloudSkills = tech.filter((s) => /aws|docker|linux|ci\/cd|devops|kubernetes|k8s|gcp|azure|cloud|terraform|jenkins|nginx/i.test(s));
+
+      const categorizedSet = new Set([...frontendSkills, ...backendSkills, ...dbSkills, ...toolSkills, ...cloudSkills]);
+      const otherSkills = tech.filter((s) => !categorizedSet.has(s));
+      if (!otherSkills.some((s) => /security/i.test(s))) otherSkills.push("Web Security (PBKDF2/CORS)");
+      if (!otherSkills.some((s) => /openai|ai/i.test(s))) otherSkills.push("OpenAI API / AI Integration");
+      if (!otherSkills.some((s) => /performance/i.test(s))) otherSkills.push("Performance Optimization");
 
       skillsCategorized = [
         {
           label: "Frontend :",
-          text: frontendSkills.length > 0 ? frontendSkills.join(", ") : "JavaScript, React.js, TypeScript, Tailwind CSS, Redux, Zustand, Material UI, Cross-platform, HTML, CSS",
+          text: frontendSkills.length > 0 ? frontendSkills.join(", ") : "React.js, Next.js, TypeScript, JavaScript, Tailwind CSS, Redux Toolkit, Zustand, Material UI, HTML5, CSS3",
         },
         {
           label: "Backend :",
-          text: backendSkills.length > 0 ? backendSkills.join(", ") : "Node.js, Express.js, RESTful APIs, JWT Authentication, Socket.io, WebSocket",
+          text: backendSkills.length > 0 ? backendSkills.join(", ") : "Node.js, Express.js, RESTful APIs, JWT Authentication, WebSockets (Socket.io), Stripe API",
         },
         {
-          label: "Databases :",
-          text: dbSkills.length > 0 ? dbSkills.join(", ") : "MongoDB, Mongoose, MySQL (basic), PostgreSQL (basic)",
+          label: "Databases & ORM :",
+          text: dbSkills.length > 0 ? dbSkills.join(", ") : "PostgreSQL, MongoDB, Prisma ORM, Mongoose, MySQL",
         },
         {
           label: "Tools & Platforms :",
-          text: toolSkills.length > 0 ? toolSkills.join(", ") : "Git, GitHub, Vite, Figma",
+          text: toolSkills.length > 0 ? toolSkills.join(", ") : "Git, GitHub, Postman, Vite, Figma",
         },
         {
           label: "Cloud & DevOps :",
-          text: cloudSkills.length > 0 ? cloudSkills.join(", ") : "AWS (beginner), Docker, Linux, CI/CD Pipelines (basic), DevOps Fundamentals",
+          text: cloudSkills.length > 0 ? cloudSkills.join(", ") : "Docker, AWS, Linux, CI/CD Pipelines, DevOps Fundamentals",
         },
         {
-          label: "Other :",
-          text: otherSkills.length > 0 ? otherSkills.join(", ") : "Web Security Practices, OpenAI API",
+          label: "Specialized :",
+          text: otherSkills.length > 0 ? otherSkills.join(", ") : "OpenAI API / AI Integration, Web Security (PBKDF2/CORS), Performance Optimization",
         },
       ];
     }
@@ -122,41 +176,35 @@ export function ReplicaResumeSheet({
     },
   ];
 
-  // Exact fallback projects if empty
+  // Exact fallback projects if empty (3 focused projects: CareerPulse, TaskForge, CoreDesk)
   const displayProjects = projects.length > 0 ? projects : [
     {
-      name: "AI Automation Platform - AI automation platform using Next.js, TypeScript, OpenAI, Prisma, and PostgreSQL",
+      name: "CareerPulse - Career Application Copilot & Extension using Next.js, TypeScript, PostgreSQL, OpenAI",
       bullets: [
-        "Built AI-powered workflows to automate repetitive business tasks.",
+        "Engineered an automated application platform with intelligent resume tailoring, ATS scoring, and multi-source job tracking.",
+        "Developed a Manifest V3 Chrome extension for 1-click form autofill and real-time application tracking across career portals.",
+      ],
+    },
+    {
+      name: "TaskForge - Event-Driven Workflow Automation Engine using Next.js, TypeScript, OpenAI, Prisma, PostgreSQL",
+      bullets: [
+        "Built AI-powered workflows to automate repetitive business tasks with asynchronous background job processing.",
         "Developed responsive dashboards with authentication and automated workflows.",
       ],
     },
     {
-      name: "CipherBox - Password Manager using React, Tailwind CSS, Express.js, MongoDB",
+      name: "CoreDesk - Business Operations & Subscription Platform using Next.js, TypeScript, Tailwind CSS, MongoDB, Stripe",
       bullets: [
-        "Implemented authentication and CRUD operations for credential management.",
-        "Built a responsive UI with secure MongoDB data handling.",
-      ],
-    },
-    {
-      name: "FanConnect - Subscription Platform using Next.js, TypeScript, Tailwind CSS, MongoDB",
-      bullets: [
-        "Built authentication, subscriptions, and payment features.",
-        "Developed responsive UI with role-based access control.",
-      ],
-    },
-    {
-      name: "Job Tracker - Job Application Platform using TypeScript, React, Express",
-      bullets: [
-        "Integrated AI to analyze resumes and match job descriptions.",
-        "Built responsive UI and scalable APIs for application tracking.",
+        "Architected a subscription platform with Stripe integration, recurring billing, webhooks, and role-based access control.",
+        "Implemented an encrypted credential and password management vault with PBKDF2 hashing and secure MongoDB CRUD workflows.",
       ],
     },
   ];
 
   return (
     <div
-      className="bg-white text-black w-full max-w-[850px] mx-auto p-6 sm:p-10 shadow-2xl rounded-sm print:p-0 print:shadow-none print:max-w-none"
+      id={id}
+      className="replica-resume-sheet bg-white text-black w-full max-w-[850px] mx-auto p-6 sm:p-10 shadow-2xl rounded-sm print:p-0 print:m-0 print:shadow-none print:max-w-none print:w-full"
       style={{
         fontFamily: "Calibri, 'Carlito', 'Segoe UI', Candara, Arial, sans-serif",
         color: "#000000",
@@ -202,22 +250,22 @@ export function ReplicaResumeSheet({
           style={{ fontSize: "10.7pt" }}
         >
           {/* Phone */}
-          <span className="inline-flex items-center gap-1">
-            <svg className="w-3.5 h-3.5 fill-current text-black shrink-0" viewBox="0 0 24 24">
-              <path d="M6.62 10.79a15.053 15.053 0 006.59 6.59l2.2-2.2a1 1 0 011.02-.24 11.72 11.72 0 003.68.59 1 1 0 011 1V20a1 1 0 01-1 1A17 17 0 013 4a1 1 0 011-1h3.5a1 1 0 011 1 11.72 11.72 0 00.59 3.68 1 1 0 01-.24 1.02l-2.23 2.09z"/>
-            </svg>
+          <a
+            href={`tel:${phone.replace(/\s+/g, "")}`}
+            className="inline-flex items-center gap-1.5 hover:underline"
+            style={{ color: "#000000", textDecoration: "none" }}
+          >
+            <Phone size={13} className="text-black shrink-0" style={{ verticalAlign: "-1.5px" }} />
             <span>{phone}</span>
-          </span>
+          </a>
 
           {/* Email */}
           <a
             href={`mailto:${email}`}
-            className="inline-flex items-center gap-1 hover:underline"
+            className="inline-flex items-center gap-1.5 hover:underline"
             style={{ color: "#0000ff" }}
           >
-            <svg className="w-3.5 h-3.5 fill-current text-black shrink-0" viewBox="0 0 24 24">
-              <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
-            </svg>
+            <Mail size={13} className="text-black shrink-0" style={{ verticalAlign: "-1.5px" }} />
             <span>{email}</span>
           </a>
 
@@ -226,12 +274,10 @@ export function ReplicaResumeSheet({
             href={linkedinUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 hover:underline"
+            className="inline-flex items-center gap-1.5 hover:underline"
             style={{ color: "#0000ff" }}
           >
-            <svg className="w-3.5 h-3.5 fill-current text-black shrink-0" viewBox="0 0 24 24">
-              <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 10.9v8.37H9.2V10.9H6.46M7.83 6.64a1.64 1.64 0 1 0 0 3.28 1.64 1.64 0 0 0 0-3.28z"/>
-            </svg>
+            <LinkedinIcon size={13} className="text-blue-600 shrink-0" style={{ verticalAlign: "-1.5px" }} />
             <span>LinkedIn</span>
           </a>
 
@@ -240,12 +286,10 @@ export function ReplicaResumeSheet({
             href={githubUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 hover:underline"
+            className="inline-flex items-center gap-1.5 hover:underline"
             style={{ color: "#0000ff" }}
           >
-            <svg className="w-3.5 h-3.5 fill-current text-black shrink-0" viewBox="0 0 24 24">
-              <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
-            </svg>
+            <GithubIcon size={13} className="text-black shrink-0" style={{ verticalAlign: "-1.5px" }} />
             <span>GitHub</span>
           </a>
 
@@ -254,12 +298,10 @@ export function ReplicaResumeSheet({
             href={portfolioUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 hover:underline"
+            className="inline-flex items-center gap-1.5 hover:underline"
             style={{ color: "#0000ff" }}
           >
-            <svg className="w-3.5 h-3.5 fill-current text-black shrink-0" viewBox="0 0 24 24">
-              <path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z"/>
-            </svg>
+            <Globe size={13} className="text-blue-600 shrink-0" style={{ verticalAlign: "-1.5px" }} />
             <span>Portfolio</span>
           </a>
         </div>
@@ -268,13 +310,21 @@ export function ReplicaResumeSheet({
       {/* 2. Professional Summary */}
       <div className="mb-3.5">
         <div
-          className="font-bold uppercase tracking-tight border-b-2 border-black pb-0.5 mb-1.5"
-          style={{ fontSize: "12.7pt", color: "#000000" }}
+          className="font-bold uppercase tracking-tight flex items-center justify-between"
+          style={{ fontSize: "12.7pt", color: "#000000", lineHeight: "1.2" }}
         >
-          Professional Summary
+          <span>Professional Summary</span>
+          {isSummaryTailored && (
+            <span className="text-[9pt] font-bold text-emerald-800 bg-emerald-100 border border-emerald-400 px-2 py-0.5 rounded uppercase tracking-wider print:hidden">
+              ✨ Role-Tailored
+            </span>
+          )}
         </div>
+        <div style={{ height: "2px", backgroundColor: "#000000", marginTop: "2px", marginBottom: "5px" }} />
         <p
-          className="text-black font-normal"
+          className={`text-black font-normal transition-all ${
+            isSummaryTailored ? "bg-emerald-50/70 p-2 rounded border border-emerald-200 print:bg-transparent print:p-0 print:border-none" : ""
+          }`}
           style={{ fontSize: "12pt", lineHeight: "1.32", margin: 0 }}
         >
           {displaySummary}
@@ -284,11 +334,12 @@ export function ReplicaResumeSheet({
       {/* 3. Technical Skills */}
       <div className="mb-3.5">
         <div
-          className="font-bold uppercase tracking-tight border-b-2 border-black pb-0.5 mb-1.5"
-          style={{ fontSize: "12.7pt", color: "#000000" }}
+          className="font-bold uppercase tracking-tight"
+          style={{ fontSize: "12.7pt", color: "#000000", lineHeight: "1.2" }}
         >
           Technical Skills
         </div>
+        <div style={{ height: "2px", backgroundColor: "#000000", marginTop: "2px", marginBottom: "5px" }} />
         <div className="space-y-0.5" style={{ fontSize: "10.7pt" }}>
           {skillsCategorized.map((item, idx) => {
             const lowerHighlights = new Set(highlightSkills.map((h) => h.toLowerCase().trim()));
@@ -305,8 +356,8 @@ export function ReplicaResumeSheet({
                       <React.Fragment key={pIdx}>
                         {pIdx > 0 && ", "}
                         {isHigh ? (
-                          <span className="bg-emerald-100 text-emerald-950 font-bold px-1.5 py-0.2 rounded border border-emerald-400 inline-block">
-                            {p} ✨
+                          <span className="bg-emerald-100 text-emerald-950 font-bold px-1.5 py-0.2 rounded border border-emerald-400 inline-block shadow-xs print:bg-transparent print:text-black print:border-none print:shadow-none print:p-0 print:font-normal print:inline">
+                            {p}<span className="print:hidden"> ✨</span>
                           </span>
                         ) : (
                           p
@@ -324,15 +375,18 @@ export function ReplicaResumeSheet({
       {/* 4. Experience */}
       <div className="mb-3.5">
         <div
-          className="font-bold uppercase tracking-tight border-b-2 border-black pb-0.5 mb-1.5"
-          style={{ fontSize: "12.7pt", color: "#000000" }}
+          className="font-bold uppercase tracking-tight"
+          style={{ fontSize: "12.7pt", color: "#000000", lineHeight: "1.2" }}
         >
           Experience
         </div>
+        <div style={{ height: "2px", backgroundColor: "#000000", marginTop: "2px", marginBottom: "5px" }} />
         <div className="space-y-2.5">
           {displayExperience.map((exp: any, idx: number) => {
             const dateText = exp.dateStr || `${exp.startDate || ""} – ${exp.endDate || (exp.current ? "Present" : "Present")}`;
-            const bullets = exp.bullets || [];
+            const rawBullets = exp.bullets || [];
+            const bullets = rawBullets.filter((b: string) => !b.trim().toLowerCase().startsWith("tech stack:"));
+            const lowerHighlights = new Set(highlightSkills.map((h) => h.toLowerCase().trim()));
             return (
               <div key={idx} className="space-y-0.5">
                 <div className="flex justify-between items-baseline" style={{ fontSize: "10.7pt" }}>
@@ -343,18 +397,55 @@ export function ReplicaResumeSheet({
                   <span className="font-bold text-black shrink-0">{dateText}</span>
                 </div>
 
-                <ul className="list-disc pl-8 space-y-0.5" style={{ fontSize: "10.7pt", margin: 0 }}>
-                  {bullets.map((b: string, bIdx: number) => (
-                    <li key={bIdx} className="text-black font-normal leading-tight">
-                      {b}
-                    </li>
-                  ))}
+                <div style={{ paddingLeft: "16px", margin: 0 }}>
+                  {bullets.map((b: string, bIdx: number) => {
+                    const isAdded = lowerAddedBullets.has(b.trim().toLowerCase());
+                    return (
+                      <div key={bIdx} style={{ display: "flex", alignItems: "flex-start", marginBottom: "2px", fontSize: "10.7pt", lineHeight: "1.32" }}>
+                        <span style={{ display: "inline-block", minWidth: "12px", fontWeight: "bold", fontSize: "11pt", lineHeight: "1.1", color: "#000000" }}>•</span>
+                        <div style={{ flex: 1 }}>
+                          {isAdded ? (
+                            <span className="inline-flex items-start gap-1.5 flex-wrap my-0.5 print:inline print:m-0">
+                              <span className="bg-emerald-100 text-emerald-950 border border-emerald-400 text-[9pt] font-bold px-1.5 py-0.2 rounded uppercase tracking-wider inline-block shrink-0 print:hidden">
+                                + Added Point ✨
+                              </span>
+                              <span className="font-semibold text-emerald-950 bg-emerald-50/90 px-1 py-0.5 rounded border border-emerald-200/60 leading-tight print:bg-transparent print:border-none print:p-0 print:font-normal print:text-black print:inline">
+                                {b}
+                              </span>
+                            </span>
+                          ) : (
+                            b
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                   {exp.techStack && (
-                    <li className="text-black font-normal leading-tight">
-                      Tech Stack: <strong className="font-bold text-black">{exp.techStack}</strong>
-                    </li>
+                    <div style={{ display: "flex", alignItems: "flex-start", marginTop: "2px", fontSize: "10.7pt", lineHeight: "1.32" }}>
+                      <span style={{ display: "inline-block", minWidth: "12px", fontWeight: "bold", fontSize: "11pt", lineHeight: "1.1", color: "#000000" }}>•</span>
+                      <div style={{ flex: 1 }}>
+                        Tech Stack:{" "}
+                        <strong className="font-bold text-black">
+                          {exp.techStack.split(/,\s*/).map((t: string, tIdx: number) => {
+                            const isHigh = lowerHighlights.has(t.toLowerCase().trim());
+                            return (
+                              <React.Fragment key={tIdx}>
+                                {tIdx > 0 && ", "}
+                                {isHigh ? (
+                                  <span className="bg-emerald-100 text-emerald-950 font-bold px-1 py-0.2 rounded border border-emerald-400 inline-block print:bg-transparent print:text-black print:border-none print:shadow-none print:p-0 print:font-bold print:inline">
+                                    {t}<span className="print:hidden"> ✨</span>
+                                  </span>
+                                ) : (
+                                  t
+                                )}
+                              </React.Fragment>
+                            );
+                          })}
+                        </strong>
+                      </div>
+                    </div>
                   )}
-                </ul>
+                </div>
               </div>
             );
           })}
@@ -364,11 +455,12 @@ export function ReplicaResumeSheet({
       {/* 5. Projects ( Client & Academic ) */}
       <div className="mb-3.5">
         <div
-          className="font-bold uppercase tracking-tight border-b-2 border-black pb-0.5 mb-1.5"
-          style={{ fontSize: "12.7pt", color: "#000000" }}
+          className="font-bold uppercase tracking-tight"
+          style={{ fontSize: "12.7pt", color: "#000000", lineHeight: "1.2" }}
         >
           Projects ( Client &amp; Academic )
         </div>
+        <div style={{ height: "2px", backgroundColor: "#000000", marginTop: "2px", marginBottom: "5px" }} />
         <div className="space-y-2">
           {displayProjects.map((proj: any, idx: number) => {
             const bullets = proj.bullets || (proj.description ? [proj.description] : []);
@@ -377,13 +469,50 @@ export function ReplicaResumeSheet({
                 <div className="font-bold text-black" style={{ fontSize: "10.7pt" }}>
                   {proj.name}
                 </div>
-                <ul className="list-disc pl-8 space-y-0.5" style={{ fontSize: "10.7pt", margin: 0 }}>
-                  {bullets.map((b: string, bIdx: number) => (
-                    <li key={bIdx} className="text-black font-normal leading-tight">
-                      {b}
-                    </li>
-                  ))}
-                </ul>
+                <div style={{ marginTop: "1px", paddingLeft: "16px" }}>
+                  {bullets.map((b: string, bIdx: number) => {
+                    const isAdded = lowerAddedBullets.has(b.trim().toLowerCase());
+                    return (
+                      <div
+                        key={bIdx}
+                        style={{
+                          display: "flex",
+                          alignItems: "flex-start",
+                          marginBottom: "2px",
+                          fontSize: "10.7pt",
+                          lineHeight: "1.32",
+                        }}
+                      >
+                        <span
+                          style={{
+                            display: "inline-block",
+                            minWidth: "12px",
+                            fontWeight: "bold",
+                            fontSize: "11pt",
+                            lineHeight: "1.1",
+                            color: "#000000",
+                          }}
+                        >
+                          •
+                        </span>
+                        <div style={{ flex: 1 }}>
+                          {isAdded ? (
+                            <span className="inline-flex items-start gap-1.5 flex-wrap my-0.5 print:inline print:m-0">
+                              <span className="bg-emerald-100 text-emerald-950 border border-emerald-400 text-[9pt] font-bold px-1.5 py-0.2 rounded uppercase tracking-wider inline-block shrink-0 print:hidden">
+                                + Added Point ✨
+                              </span>
+                              <span className="font-semibold text-emerald-950 bg-emerald-50/90 px-1 py-0.5 rounded border border-emerald-200/60 leading-tight print:bg-transparent print:border-none print:p-0 print:font-normal print:text-black print:inline">
+                                {b}
+                              </span>
+                            </span>
+                          ) : (
+                            b
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             );
           })}
@@ -393,11 +522,12 @@ export function ReplicaResumeSheet({
       {/* 6. Education */}
       <div className="mb-3.5">
         <div
-          className="font-bold uppercase tracking-tight border-b-2 border-black pb-0.5 mb-1.5"
-          style={{ fontSize: "12.7pt", color: "#000000" }}
+          className="font-bold uppercase tracking-tight"
+          style={{ fontSize: "12.7pt", color: "#000000", lineHeight: "1.2" }}
         >
           Education
         </div>
+        <div style={{ height: "2px", backgroundColor: "#000000", marginTop: "2px", marginBottom: "5px" }} />
         <div className="space-y-2" style={{ fontSize: "10.7pt" }}>
           {/* Row 1: KSV University */}
           <div>
@@ -450,11 +580,12 @@ export function ReplicaResumeSheet({
       {/* 7. Additional Information */}
       <div className="mb-2">
         <div
-          className="font-bold uppercase tracking-tight border-b-2 border-black pb-0.5 mb-1.5"
-          style={{ fontSize: "12.7pt", color: "#000000" }}
+          className="font-bold uppercase tracking-tight"
+          style={{ fontSize: "12.7pt", color: "#000000", lineHeight: "1.2" }}
         >
           Additional Information
         </div>
+        <div style={{ height: "2px", backgroundColor: "#000000", marginTop: "2px", marginBottom: "5px" }} />
         <div className="space-y-1" style={{ fontSize: "10.7pt" }}>
           <div>
             <strong className="font-bold text-black">Achievements:</strong>{" "}

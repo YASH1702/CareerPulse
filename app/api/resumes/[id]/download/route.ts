@@ -131,9 +131,36 @@ export async function GET(
       .print-bar { display: none !important; }
     }
   </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script>
+    function savePdf() {
+      const btn = document.getElementById('save-pdf-btn');
+      if (!btn) return;
+      btn.innerText = '⏳ Generating PDF...';
+      btn.style.opacity = '0.7';
+      const opt = {
+        margin: [6, 8, 6, 8],
+        filename: '${candidateName.replace(/\s+/g, "_")}_Resume.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2.5, useCORS: true, backgroundColor: '#ffffff' },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+      btn.style.display = 'none';
+      html2pdf().set(opt).from(document.body).save().then(function() {
+        btn.style.display = 'flex';
+        btn.innerText = '✅ Saved PDF!';
+        setTimeout(function() { btn.innerText = '📥 1-Click Save PDF'; btn.style.opacity = '1'; }, 3000);
+      }).catch(function(err) {
+        console.error(err);
+        btn.style.display = 'flex';
+        btn.innerText = '📥 1-Click Save PDF';
+        btn.style.opacity = '1';
+      });
+    }
+  </script>
 </head>
 <body>
-  <div class="print-bar" onclick="window.print()">🖨️ Print / Save as PDF</div>
+  <div class="print-bar" id="save-pdf-btn" onclick="savePdf()">📥 1-Click Save PDF</div>
 
   <div class="header">
     <h1 class="name">${candidateName}</h1>
@@ -142,23 +169,23 @@ export async function GET(
       <a href="mailto:${user?.email || "yashwantkariha1@gmail.com"}">✉️ ${user?.email || "yashwantkariha1@gmail.com"}</a>
       <a href="${profile?.linkedinUrl || "https://www.linkedin.com/in/yashwant-kariha-740630207/"}" target="_blank">LinkedIn</a>
       <a href="${profile?.githubUrl || "https://github.com/YASH1702"}" target="_blank">GitHub</a>
-      <a href="${profile?.portfolioUrl || "https://vscode-portfolio-main-blush.vercel.app/"}" target="_blank">Portfolio</a>
+      <a href="${profile?.portfolioUrl || "https://portfolio3-ial7sxdz4-yashwants-projects-ec1ef74c.vercel.app/"}" target="_blank">Portfolio</a>
     </div>
   </div>
 
   <div class="section-title">Professional Summary</div>
   <p style="margin: 4px 0 8px 0; font-size: 12pt; line-height: 1.32;">
-    ${resume.summary || "Web Developer with 1+ years of experience, skilled in React, Node.js, Express, and MongoDB, with expertise in building responsive, secure, and scalable web applications. Experienced in API integration, modern UI/UX design with Tailwind CSS, and AI-powered solutions."}
+    ${resume.summary || "Full-Stack Developer with 1+ years of professional experience building responsive, secure, and scalable web applications using React, Next.js, TypeScript, Node.js, and PostgreSQL/MongoDB. Experienced in RESTful API architecture, Tailwind CSS, Stripe payment workflows, and production AI-powered tools."}
   </p>
 
   <div class="section-title">Technical Skills</div>
   <div>
-    <div class="skills-row"><span class="skills-label">Frontend :</span><span>JavaScript, React.js, TypeScript, Tailwind CSS, Redux, Zustand, Material UI, Cross-platform, HTML, CSS</span></div>
-    <div class="skills-row"><span class="skills-label">Backend :</span><span>Node.js, Express.js, RESTful APIs, JWT Authentication, Socket.io, WebSocket</span></div>
-    <div class="skills-row"><span class="skills-label">Databases :</span><span>MongoDB, Mongoose, MySQL (basic), PostgreSQL (basic)</span></div>
-    <div class="skills-row"><span class="skills-label">Tools & Platforms :</span><span>Git, GitHub, Vite, Figma</span></div>
-    <div class="skills-row"><span class="skills-label">Cloud & DevOps :</span><span>AWS (beginner), Docker, Linux, CI/CD Pipelines (basic), DevOps Fundamentals</span></div>
-    <div class="skills-row"><span class="skills-label">Other :</span><span>Web Security Practices, OpenAI API</span></div>
+    <div class="skills-row"><span class="skills-label">Frontend :</span><span>React.js, Next.js, TypeScript, JavaScript, Tailwind CSS, Redux Toolkit, Zustand, Material UI, HTML5, CSS3</span></div>
+    <div class="skills-row"><span class="skills-label">Backend :</span><span>Node.js, Express.js, RESTful APIs, JWT Authentication, WebSockets (Socket.io), Stripe API</span></div>
+    <div class="skills-row"><span class="skills-label">Databases & ORM :</span><span>PostgreSQL, MongoDB, Prisma ORM, Mongoose, MySQL</span></div>
+    <div class="skills-row"><span class="skills-label">Tools & Platforms :</span><span>Git, GitHub, Postman, Vite, Figma</span></div>
+    <div class="skills-row"><span class="skills-label">Cloud & DevOps :</span><span>Docker, AWS, Linux, CI/CD Pipelines, DevOps Fundamentals</span></div>
+    <div class="skills-row"><span class="skills-label">Specialized :</span><span>OpenAI API / AI Integration, Web Security (PBKDF2/CORS), Performance Optimization</span></div>
   </div>
 
   <div class="section-title">Experience</div>
@@ -190,20 +217,22 @@ export async function GET(
   <div class="section-title">Projects ( Client & Academic )</div>
   ${(proj.length > 0 ? proj : [
     {
-      name: "AI Automation Platform - AI automation platform using Next.js, TypeScript, OpenAI, Prisma, and PostgreSQL",
-      bullets: ["Built AI-powered workflows to automate repetitive business tasks.", "Developed responsive dashboards with authentication and automated workflows."]
+      name: "CareerPulse - Career Application Copilot & Extension using Next.js, TypeScript, PostgreSQL, OpenAI",
+      bullets: [
+        "Engineered an automated application platform with intelligent resume tailoring, ATS scoring, and multi-source job tracking.",
+        "Developed a Manifest V3 Chrome extension for 1-click form autofill and real-time application tracking across career portals."
+      ]
     },
     {
-      name: "CipherBox - Password Manager using React, Tailwind CSS, Express.js, MongoDB",
-      bullets: ["Implemented authentication and CRUD operations for credential management.", "Built a responsive UI with secure MongoDB data handling."]
+      name: "TaskForge - Event-Driven Workflow Automation Engine using Next.js, TypeScript, OpenAI, Prisma, PostgreSQL",
+      bullets: ["Built AI-powered workflows to automate repetitive business tasks with asynchronous background job processing.", "Developed responsive dashboards with authentication and automated workflows."]
     },
     {
-      name: "FanConnect - Subscription Platform using Next.js, TypeScript, Tailwind CSS, MongoDB",
-      bullets: ["Built authentication, subscriptions, and payment features.", "Developed responsive UI with role-based access control."]
-    },
-    {
-      name: "Job Tracker - Job Application Platform using TypeScript, React, Express",
-      bullets: ["Integrated AI to analyze resumes and match job descriptions.", "Built responsive UI and scalable APIs for application tracking."]
+      name: "CoreDesk - Business Operations & Subscription Platform using Next.js, TypeScript, Tailwind CSS, MongoDB, Stripe",
+      bullets: [
+        "Architected a subscription platform with Stripe integration, recurring billing, webhooks, and role-based access control.",
+        "Implemented an encrypted credential and password management vault with PBKDF2 hashing and secure MongoDB CRUD workflows."
+      ]
     }
   ]).map((p: any) => `
     <div style="margin-bottom: 6px;">

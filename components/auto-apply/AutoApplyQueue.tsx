@@ -393,6 +393,7 @@ export function AutoApplyQueue({ initialQueue }: Props) {
                   companyName={job.companyName}
                   requiredSkills={job.requiredSkills}
                   preferredSkills={job.preferredSkills}
+                  applicationUrl={job.applicationUrl || job.sourceUrl || undefined}
                 />
                 <RecruiterOutreachModal
                   jobId={job.id}

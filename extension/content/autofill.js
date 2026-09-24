@@ -142,6 +142,22 @@
     return false;
   }
 
+  // Helper to find tailored custom resume matching current web page
+  function findMatchingCustomResume(candidate) {
+    if (!candidate) return null;
+    const customResumes = candidate.customResumes || [];
+    const fullText = `${window.location.href} ${document.title}`.toLowerCase();
+
+    for (const cr of customResumes) {
+      const comp = (cr.companyName || "").toLowerCase().trim();
+      const role = (cr.jobTitle || "").toLowerCase().trim();
+      if (comp.length > 2 && fullText.includes(comp)) return cr;
+      if (cr.jobUrl && window.location.href.includes(cr.jobUrl)) return cr;
+      if (role.length > 4 && fullText.includes(role)) return cr;
+    }
+    return candidate.activeResume || candidate.masterResume || null;
+  }
+
   // Listen for messages from popup or background service worker
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === "AUTOFILL_JOB_FORM") {
@@ -151,7 +167,8 @@
         return;
       }
       cachedCandidate = candidate;
-      const result = executeUniversalAutofill(candidate);
+      const selectedResume = request.selectedResume || findMatchingCustomResume(candidate);
+      const result = executeUniversalAutofill(candidate, selectedResume);
       sendResponse(result);
     }
     return true;
@@ -196,6 +213,12 @@
       return;
     }
 
+    const targetResume = findMatchingCustomResume(cachedCandidate);
+    const isTailored = targetResume && (targetResume.resumeType === "TAILORED" || targetResume.id !== cachedCandidate?.masterResume?.id);
+    const resumeLabel = targetResume
+      ? (isTailored ? `✨ Tailored: ${targetResume.companyName || targetResume.jobTitle}` : `📄 ${targetResume.name.slice(0, 22)}`)
+      : "Master Profile";
+
     const banner = document.createElement("div");
     banner.id = "jobpilot-inline-banner";
     banner.className = "jobpilot-inline-banner";
@@ -204,12 +227,15 @@
         <span class="jp-banner-logo">⚡</span>
         <div class="jp-banner-text">
           <strong class="jp-banner-title">JobPilot AI Copilot</strong>
-          <span class="jp-banner-desc">Ready to 1-Click Auto-Fill with your profile</span>
+          <span class="jp-banner-desc">Ready with ${resumeLabel}</span>
         </div>
       </div>
-      <button type="button" class="jp-banner-btn" id="jp-banner-autofill-btn">
-        <span>⚡ 1-Click Auto-Fill Form</span>
-      </button>
+      <div style="display:flex;align-items:center;gap:8px;">
+        ${targetResume?.id ? `<a href="http://localhost:3000/resumes/${targetResume.id}" target="_blank" class="jp-banner-pdf-link" title="Download and save 1-page ATS PDF for this resume">📄 Save ATS PDF ↗</a>` : ""}
+        <button type="button" class="jp-banner-btn" id="jp-banner-autofill-btn">
+          <span>⚡ 1-Click Auto-Fill</span>
+        </button>
+      </div>
     `;
 
     const btn = banner.querySelector("#jp-banner-autofill-btn");
@@ -220,17 +246,18 @@
       btn.innerHTML = "<span>⏳ Filling Fields...</span>";
 
       if (cachedCandidate) {
-        const res = executeUniversalAutofill(cachedCandidate);
-        showToast(`🎉 JobPilot filled ${res.filledCount} fields on this step!`);
+        const resumeToUse = findMatchingCustomResume(cachedCandidate);
+        const res = executeUniversalAutofill(cachedCandidate, resumeToUse);
+        showToast(`🎉 JobPilot filled ${res.filledCount} fields using ${resumeToUse ? resumeToUse.name.slice(0, 22) : 'profile'}!`);
         btn.innerHTML = `<span>✅ Filled (${res.filledCount} Fields)</span>`;
       } else {
         showToast("⚠️ JobPilot server is offline. Please start localhost:3000.");
-        btn.innerHTML = "<span>⚡ 1-Click Auto-Fill Form</span>";
+        btn.innerHTML = "<span>⚡ 1-Click Auto-Fill</span>";
       }
 
       setTimeout(() => {
         btn.disabled = false;
-        btn.innerHTML = "<span>⚡ 1-Click Auto-Fill Form</span>";
+        btn.innerHTML = "<span>⚡ 1-Click Auto-Fill</span>";
       }, 2500);
     });
 
@@ -267,8 +294,10 @@
 
     widget.addEventListener("click", async () => {
       if (cachedCandidate) {
-        const res = executeUniversalAutofill(cachedCandidate);
-        showToast(`🎉 JobPilot filled ${res.filledCount} fields!`);
+        const resumeToUse = findMatchingCustomResume(cachedCandidate);
+        const res = executeUniversalAutofill(cachedCandidate, resumeToUse);
+        const label = resumeToUse ? (resumeToUse.companyName || resumeToUse.name.slice(0, 20)) : "profile";
+        showToast(`🎉 JobPilot filled ${res.filledCount} fields using ${label}!`);
       } else {
         showToast("⚠️ JobPilot server is offline. Please start localhost:3000.");
       }
@@ -373,7 +402,7 @@
   }
 
   // Universal Autofill Engine
-  function executeUniversalAutofill(candidate) {
+  function executeUniversalAutofill(candidate, customResume) {
     let filledCount = 0;
     const hostname = window.location.hostname;
     let platform = "Standard Job Form";
@@ -383,6 +412,13 @@
     else if (hostname.includes("lever.co")) platform = "Lever ATS";
     else if (hostname.includes("workday")) platform = "Workday";
     else if (hostname.includes("indeed.com")) platform = "Indeed";
+
+    const activeResume = customResume || findMatchingCustomResume(candidate);
+    const resumeSummary = activeResume?.summary || candidate.summary || candidate.bio || "";
+    const resumeSkills = (activeResume?.skills && activeResume.skills.length > 0)
+      ? activeResume.skills.join(", ")
+      : (candidate.skills || []).join(", ");
+    const resumeRole = activeResume?.jobTitle || activeResume?.targetRole || candidate.currentRole || candidate.headline;
 
     const inputs = Array.from(
       document.querySelectorAll("input:not([type='hidden']):not([type='submit']), select, textarea")
@@ -549,8 +585,34 @@
         descriptor.includes("current title") ||
         descriptor.includes("job title")
       ) {
-        if (setNativeValue(input, candidate.currentRole)) filledCount++;
+        if (setNativeValue(input, resumeRole || candidate.currentRole)) filledCount++;
         return;
+      }
+
+      // Tailored Summary / Cover Letter / Bio / Personal Statement
+      if (
+        (input.tagName.toLowerCase() === "textarea" || descriptor.includes("summary") || descriptor.includes("cover letter") || descriptor.includes("about yourself") || descriptor.includes("bio") || descriptor.includes("tell us about") || descriptor.includes("pitch")) &&
+        !descriptor.includes("email") &&
+        !descriptor.includes("phone")
+      ) {
+        if (resumeSummary && setNativeValue(input, resumeSummary)) {
+          filledCount++;
+          return;
+        }
+      }
+
+      // Technical Skills / Competencies / Keywords
+      if (
+        descriptor.includes("skills") ||
+        descriptor.includes("key skills") ||
+        descriptor.includes("technical skills") ||
+        descriptor.includes("technologies") ||
+        descriptor.includes("competencies")
+      ) {
+        if (resumeSkills && setNativeValue(input, resumeSkills)) {
+          filledCount++;
+          return;
+        }
       }
 
       // Notice Period / Availability
@@ -665,6 +727,32 @@
         const gradYear = candidate.education[0]?.endYear || 2024;
         if (setNativeValue(input, gradYear)) filledCount++;
         return;
+      }
+    });
+ 
+    // Highlight File Upload inputs and inject 1-click ATS PDF helper badge
+    const fileInputs = Array.from(document.querySelectorAll("input[type='file']"));
+    fileInputs.forEach((fileInput) => {
+      fileInput.classList.add("jobpilot-file-highlight");
+      const parent = fileInput.parentElement;
+      if (parent && !parent.querySelector(".jp-file-helper-badge")) {
+        const helper = document.createElement("div");
+        helper.className = "jp-file-helper-badge";
+        const pdfUrl = activeResume?.id
+          ? `http://localhost:3000/resumes/${activeResume.id}`
+          : "http://localhost:3000/resumes";
+        const resumeTitle = activeResume?.companyName
+          ? `Tailored for ${activeResume.companyName}`
+          : (activeResume?.name ? activeResume.name.slice(0, 24) : "1-Page ATS Resume");
+
+        helper.innerHTML = `
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span style="font-size:14px;">📎</span>
+            <span>Attach ATS PDF: <strong>${resumeTitle}</strong></span>
+          </div>
+          <a href="${pdfUrl}" target="_blank" class="jp-file-helper-link" title="Open and save 1-page ATS PDF">📥 Save ATS PDF ↗</a>
+        `;
+        parent.insertBefore(helper, fileInput);
       }
     });
 

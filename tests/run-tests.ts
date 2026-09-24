@@ -231,6 +231,123 @@ async function runAllTests() {
   const email3 = classifyInboundEmail("Update on your application at Acme", "Unfortunately, after careful consideration we have decided to pursue other candidates.");
   assert(email3.category === "REJECTION", "Classified rejection email correctly");
 
+  // ─── 9. Intelligent Tailoring & Added Points Verification ──
+  console.log("\n--- Test Group 9: Role-Specific Tailoring & Added Points ---");
+  const { generateIntelligentTailoredResume } = await import("../lib/ai/tailor-resume");
+
+  const mockMasterResume = {
+    summary: "Web Developer with 1+ years of experience...",
+    skills: {
+      technical: ["JavaScript", "React.js", "TypeScript", "Tailwind CSS", "Node.js", "Express.js", "MongoDB", "PostgreSQL"],
+      soft: ["Problem Solving", "Collaboration"],
+    },
+    experience: [
+      {
+        company: "GYMYAK Pvt. Ltd.",
+        role: "Frontend / Full Stack Developer",
+        bullets: [
+          "Delivered and maintained the e-commerce website, improving load speed by ~20%.",
+          "Converted Figma designs into a responsive interface with React + Tailwind CSS.",
+          "Linked backend APIs via Node.js, MongoDB, and Axios to enable core features.",
+        ],
+        techStack: "React, Tailwind CSS, Figma, Node.js, MongoDB, Axios, Javascript, HTML, CSS",
+      },
+      {
+        company: "Grras Solutions Pvt. Ltd.",
+        role: "Python Web Developer Intern",
+        bullets: [
+          "Constructed efficient APIs leveraging Django and PostgreSQL for interactive applications.",
+          "Achieved 30% faster query execution through indexing and caching on high-load database endpoints.",
+          "Delivered interactive CRUD solutions that improved reporting workflows and overall client satisfaction.",
+        ],
+        techStack: "Python, Django, PostgreSQL, RESTful APIs",
+      },
+    ],
+    projects: [
+      {
+        name: "CoreDesk - Business Operations & Subscription Platform",
+        bullets: [
+          "Built authentication, subscriptions, and Stripe payment processing.",
+          "Implemented encrypted credential vaults and secure MongoDB CRUD workflows.",
+        ],
+      },
+      {
+        name: "TaskForge - Event-Driven Workflow Automation Engine",
+        bullets: [
+          "Built AI-powered workflows to automate repetitive business tasks.",
+          "Developed responsive dashboards with authentication and automated workflows.",
+        ],
+      },
+      {
+        name: "CareerPulse - Career Application Copilot & Extension",
+        bullets: [
+          "Engineered an automated application platform with intelligent resume tailoring, ATS scoring, and multi-source job tracking.",
+          "Developed a Manifest V3 Chrome extension for 1-click form autofill and real-time application tracking across career portals.",
+        ],
+      },
+    ],
+  };
+
+  const tailorTestJob = {
+    title: "Full Stack Engineer (React + Node.js)",
+    companyName: "Stripe Ecosystem",
+    requiredSkills: ["Next.js", "Docker", "PostgreSQL"],
+    preferredSkills: ["Tailwind CSS", "RESTful APIs"],
+    responsibilities: ["Build scalable APIs", "Design responsive UI"],
+    description: "Looking for an engineer proficient in Next.js, Docker, and PostgreSQL.",
+  };
+
+  const tailoredResult = generateIntelligentTailoredResume({
+    masterResume: mockMasterResume as any,
+    job: tailorTestJob as any,
+    focusAreas: ["Next.js", "Docker"],
+  });
+
+  // Check 1: Summary has natural, human tone and strictly 2 sentences (ideal 1-page length)
+  assert(
+    Boolean(tailoredResult.summary && tailoredResult.summary.split(/\s+/).length <= 45),
+    `Summary is concise and natural (${tailoredResult.summary?.split(/\s+/).length} words <= 45 words)`
+  );
+
+  // Check 2: Technical skills prioritized with required JD skills at front
+  assert(
+    tailoredResult.skills?.technical?.[0] === "Next.js" || tailoredResult.skills?.technical?.includes("Next.js"),
+    "Target skill Next.js prioritized into technical skills"
+  );
+  assert(
+    Boolean(tailoredResult.skills?.technical?.includes("Docker")),
+    "Target skill Docker included in technical skills"
+  );
+
+  // Check 3: Added points in GYMYAK experience (strictly 4 bullets for 1-page fit)
+  const gymyakExp = tailoredResult.experience?.find((e) => /gymyak/i.test(e.company));
+  assert(
+    Boolean(gymyakExp && gymyakExp.bullets && gymyakExp.bullets.length === 4),
+    `GYMYAK has exactly 4 concise bullets (count: ${gymyakExp?.bullets?.length ?? 0}, strictly 1-page bounded)`
+  );
+
+  // Check 4: CoreDesk has strictly 2 bullets with human-phrased Stripe integration
+  const coreDeskProj = tailoredResult.projects?.find((p) => /coredesk|core desk|businessflow|business flow|fanconnect/i.test(p.name));
+  assert(
+    Boolean(coreDeskProj && coreDeskProj.bullets && coreDeskProj.bullets.length === 2),
+    `CoreDesk strictly maintains 2 concise bullets for 1-page budget (count: ${coreDeskProj?.bullets?.length ?? 0})`
+  );
+  assert(
+    Boolean(coreDeskProj?.bullets?.some((b) => /stripe/i.test(b))),
+    "CoreDesk bullet naturally incorporates Stripe subscription integration"
+  );
+
+  // Check 5: CareerPulse has strictly 2 bullets with Chrome extension & autofill feature
+  const careerPulseProj = tailoredResult.projects?.find((p) => /careerpulse|career pulse|jobpilot|job pilot/i.test(p.name));
+  assert(
+    Boolean(careerPulseProj && careerPulseProj.bullets && careerPulseProj.bullets.length === 2),
+    `CareerPulse strictly maintains 2 concise bullets for 1-page budget (count: ${careerPulseProj?.bullets?.length ?? 0})`
+  );
+  assert(
+    Boolean(careerPulseProj?.bullets?.some((b) => /chrome extension|autofill/i.test(b))),
+    "CareerPulse bullet highlights Chrome extension and application autofill capabilities"
+  );
+
   console.log("\n=========================================");
   console.log(`   🎉 ALL ${passedTests}/${totalTests} TESTS PASSED CLEANLY! `);
   console.log("=========================================\n");

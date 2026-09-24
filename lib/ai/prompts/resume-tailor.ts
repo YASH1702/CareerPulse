@@ -13,9 +13,14 @@ Your task is to TAILOR the candidate's existing master resume to best emphasize 
 
 ### STRICT ETHICAL & ACCURACY RULES:
 1. NEVER fabricate or invent new companies, employment history, degrees, dates, certifications, or past employers.
-2. If candidate provided specific requested focus skills (${focusAreas && focusAreas.length > 0 ? focusAreas.join(", ") : "none"}), seamlessly incorporate them into technical skills, summary, and bullet points.
-3. You MAY rephrase, reorder, and emphasize bullet points to highlight skills and achievements that match the target job's requirements.
-4. You MAY strengthen action verbs, quantify achievements where context allows, and align terminology with the job posting.
+2. KEEP THE LANGUAGE COMPLETELY NATURAL AND HUMAN. Do NOT use obvious AI buzzwords like "spearheaded cross-functional paradigms", "elevating synergistic capabilities", or stuffing technologies in parentheses. Write like a real, competent software engineer with 1+ years of experience.
+3. STRICT 1-PAGE RESUME LENGTH BUDGET: A long resume hurts ATS scores and recruiter readability.
+   - Keep Professional Summary to exactly 2 concise sentences (~35-45 words).
+   - GYMYAK role: exactly 3-4 concise bullets maximum.
+   - Grras role: exactly 3 concise bullets maximum.
+   - Projects: strictly 2 concise bullets per project.
+   - Total word count MUST stay between 400 and 500 words to strictly guarantee 1-page fit.
+4. Seamlessly incorporate relevant target skills into existing bullet points and technical skills where authentic.
 5. You MUST preserve the exact company names and employment dates.
 
 ---

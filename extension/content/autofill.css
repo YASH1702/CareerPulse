@@ -171,3 +171,78 @@
   opacity: 1;
   transform: translateY(0);
 }
+
+/* 📄 ATS PDF Link in Form Banner */
+.jp-banner-pdf-link {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  background: rgba(14, 165, 233, 0.15) !important;
+  color: #38bdf8 !important;
+  border: 1px solid rgba(56, 189, 248, 0.4) !important;
+  padding: 7px 12px !important;
+  border-radius: 8px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  text-decoration: none !important;
+  transition: all 0.15s ease !important;
+  white-space: nowrap !important;
+}
+
+.jp-banner-pdf-link:hover {
+  background: rgba(14, 165, 233, 0.28) !important;
+  color: #ffffff !important;
+  border-color: #38bdf8 !important;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.4) !important;
+}
+
+/* 📎 File Upload Input Highlighting */
+.jobpilot-file-highlight {
+  outline: 2.5px dashed #0284c7 !important;
+  outline-offset: 4px !important;
+  background-color: rgba(2, 132, 199, 0.06) !important;
+  border-radius: 8px !important;
+  transition: all 0.3s ease !important;
+}
+
+/* 📎 File Upload Helper Badge */
+.jp-file-helper-badge {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  background: #0f172a !important;
+  border: 1.5px solid #0284c7 !important;
+  border-radius: 8px !important;
+  padding: 7px 12px !important;
+  margin: 6px 0 10px 0 !important;
+  font-size: 12px !important;
+  color: #f1f5f9 !important;
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.25) !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  z-index: 100 !important;
+}
+
+.jp-file-helper-badge strong {
+  color: #38bdf8 !important;
+  font-weight: 600 !important;
+}
+
+.jp-file-helper-link {
+  color: #38bdf8 !important;
+  font-weight: 700 !important;
+  text-decoration: none !important;
+  padding: 4px 10px !important;
+  background: rgba(56, 189, 248, 0.15) !important;
+  border: 1px solid rgba(56, 189, 248, 0.35) !important;
+  border-radius: 6px !important;
+  margin-left: 10px !important;
+  transition: all 0.15s ease !important;
+  white-space: nowrap !important;
+}
+
+.jp-file-helper-link:hover {
+  background: #0284c7 !important;
+  color: #ffffff !important;
+  border-color: #0284c7 !important;
+  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.4) !important;
+}

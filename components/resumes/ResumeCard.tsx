@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { FileText, Trash2, Star, ChevronDown, ChevronUp, Loader2, Edit2, Check, X, CheckCircle2, Printer, Sparkles } from "lucide-react";
+import { FileText, Trash2, Star, ChevronDown, ChevronUp, Loader2, Edit2, Check, X, CheckCircle2, Download, Sparkles } from "lucide-react";
 import { deleteResumeAction, updateResumeNameAction, setActiveResumeAction } from "@/actions/resumes";
 import { formatRelativeDate } from "@/utils/format";
 import { ResumeEditorModal } from "@/components/resumes/ResumeEditorModal";
@@ -130,10 +130,10 @@ export function ResumeCard({ resume, isOnly }: ResumeCardProps) {
           <Link
             href={`/resumes/${resume.id}`}
             className="px-3 py-1.5 text-xs bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors font-semibold flex items-center gap-1.5 shadow-sm"
-            title="View and print/download the full ATS-compliant PDF resume with all updated skills and details"
+            title="View and 1-click save the full ATS-compliant PDF resume"
           >
-            <Printer size={13} />
-            <span>Download / Print ATS PDF</span>
+            <Download size={13} />
+            <span>View &amp; Save PDF</span>
           </Link>
 
           <a

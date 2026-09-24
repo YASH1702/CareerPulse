@@ -162,6 +162,7 @@ export function JobCard({ job, onSelect }: Props) {
               companyName={job.companyName}
               requiredSkills={job.requiredSkills}
               preferredSkills={job.preferredSkills}
+              applicationUrl={job.applicationUrl || undefined}
             />
           </div>
           {job.applicationUrl && (

@@ -51,8 +51,24 @@ export async function GET(req: NextRequest) {
           },
         },
         resumes: {
-          where: { isActive: true },
-          take: 1,
+          include: {
+            applications: {
+              include: {
+                job: {
+                  select: {
+                    id: true,
+                    title: true,
+                    companyName: true,
+                    location: true,
+                    applicationUrl: true,
+                    sourceUrl: true,
+                    requiredSkills: true,
+                  },
+                },
+              },
+            },
+          },
+          orderBy: [{ isActive: "desc" }, { updatedAt: "desc" }],
         },
       },
     });
@@ -66,7 +82,49 @@ export async function GET(req: NextRequest) {
     }
 
     const p = user.profile;
-    const activeResume = user.resumes && user.resumes.length > 0 ? user.resumes[0] : null;
+    const allResumes = user.resumes || [];
+    const masterResume =
+      allResumes.find((r) => r.resumeType === "MASTER" && r.isActive) ||
+      allResumes.find((r) => r.resumeType === "MASTER") ||
+      allResumes[0] ||
+      null;
+
+    const activeResume = allResumes.find((r) => r.isActive) || masterResume;
+
+    // Filter and format custom resumes tailored specifically for jobs
+    const customResumes = allResumes
+      .filter((r) => r.resumeType === "TAILORED" || (r.applications && r.applications.length > 0))
+      .map((r) => {
+        const linkedJob = r.applications?.[0]?.job;
+        let company = linkedJob?.companyName;
+        if (!company && r.name.includes(" at ")) {
+          company = r.name.split(" at ")[1]?.trim();
+        }
+        let role = linkedJob?.title || r.targetRole;
+        if (!role && r.name.startsWith("Tailored: ")) {
+          role = r.name.replace("Tailored: ", "").split(" at ")[0]?.trim();
+        }
+
+        const rawSkills = ((r.skills as Record<string, unknown>)?.technical as string[]) || [];
+
+        return {
+          id: r.id,
+          name: r.name,
+          resumeType: r.resumeType,
+          jobId: linkedJob?.id || null,
+          jobTitle: role || "Target Role",
+          companyName: company || "Target Company",
+          jobUrl: linkedJob?.applicationUrl || linkedJob?.sourceUrl || "",
+          summary: r.summary,
+          skills: rawSkills,
+          skillsObj: r.skills,
+          experience: r.experience,
+          projects: r.projects,
+          wordCount: r.wordCount,
+          atsScore: r.atsScore,
+          updatedAt: r.updatedAt,
+        };
+      });
 
     // Split name into first and last name
     const nameParts = (user.name || "").trim().split(/\s+/);
@@ -115,7 +173,7 @@ export async function GET(req: NextRequest) {
         links: {
           linkedin: p.linkedinUrl || "https://www.linkedin.com/in/yashwant-kariha-740630207/",
           github: p.githubUrl || "https://github.com/YASH1702",
-          portfolio: p.portfolioUrl || "https://vscode-portfolio-main-blush.vercel.app/",
+          portfolio: p.portfolioUrl || "https://portfolio3-ial7sxdz4-yashwants-projects-ec1ef74c.vercel.app/",
           twitter: "",
         },
         screeningAnswers: {
@@ -147,17 +205,37 @@ export async function GET(req: NextRequest) {
           years: s.yearsUsed || 2,
         })),
         skillsMap,
+        masterResume: masterResume
+          ? {
+              id: masterResume.id,
+              name: masterResume.name,
+              summary: masterResume.summary,
+              rawText: masterResume.rawText,
+              skills: ((masterResume.skills as Record<string, unknown>)?.technical as string[]) || [],
+              skillsObj: masterResume.skills,
+              experience: masterResume.experience,
+              projects: masterResume.projects,
+              fileUrl: masterResume.fileUrl,
+              fileName: masterResume.fileName,
+              atsScore: masterResume.atsScore,
+            }
+          : null,
         activeResume: activeResume
           ? {
               id: activeResume.id,
               name: activeResume.name,
               summary: activeResume.summary,
               rawText: activeResume.rawText,
+              skills: ((activeResume.skills as Record<string, unknown>)?.technical as string[]) || [],
+              skillsObj: activeResume.skills,
+              experience: activeResume.experience,
+              projects: activeResume.projects,
               fileUrl: activeResume.fileUrl,
               fileName: activeResume.fileName,
               atsScore: activeResume.atsScore,
             }
           : null,
+        customResumes,
       },
     };
 

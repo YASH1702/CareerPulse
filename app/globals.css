@@ -111,3 +111,77 @@ body {
   transition: background 0.15s, color 0.15s;
 }
 .btn-ghost:hover { background: rgba(255,255,255,0.08); color: #f8fafc; }
+
+/* ─── Dedicated Print / Save as PDF Rules ────────────────── */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 6mm 8mm 6mm 8mm;
+  }
+
+  /* Universal Print Hiding for UI chrome, navigation, buttons */
+  aside,
+  nav,
+  header,
+  footer,
+  .print\:hidden,
+  #print-btn,
+  #jobpilot-inline-banner,
+  #jobpilot-floating-copilot,
+  #jobpilot-toast,
+  [data-print-hidden="true"] {
+    display: none !important;
+  }
+
+  /* Document root reset */
+  html,
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Flatten all flex/overflow constraints */
+  .flex.h-screen {
+    display: block !important;
+    height: auto !important;
+    overflow: visible !important;
+    background: #ffffff !important;
+  }
+
+  main {
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  main > div {
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+  }
+
+  /* Resume sheet fills page width cleanly */
+  .replica-resume-sheet {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+}

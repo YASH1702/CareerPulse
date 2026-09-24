@@ -41,10 +41,45 @@
         </div>
       </div>
 
+      <!-- Custom & Tailored Resume Selector Card -->
+      <div class="card resume-card" id="resume-selector-card">
+        <div class="resume-card-header">
+          <div class="resume-label">
+            <span class="sparkle-icon">✨</span>
+            <span class="resume-label-title">Resume for this Application</span>
+          </div>
+          <span id="detected-job-badge" class="badge-matched hidden">🎯 Matched Job</span>
+        </div>
+
+        <div class="resume-select-wrapper">
+          <select id="resume-select" class="input-select">
+            <option value="master">📄 Master Resume (Default Baseline)</option>
+            <!-- Populated with custom resumes tailored specifically for jobs -->
+          </select>
+        </div>
+
+        <!-- Selected Resume Quick Details & 1-Click Action Bar -->
+        <div id="selected-resume-details" class="selected-resume-details">
+          <div class="resume-detail-row">
+            <span class="detail-target" id="selected-resume-role">Full Stack Developer</span>
+            <span class="detail-badge master" id="selected-resume-type">Master</span>
+          </div>
+          <p class="resume-snippet" id="selected-resume-summary">Web Developer with 1+ years experience...</p>
+          <div class="resume-actions-row">
+            <button type="button" id="download-pdf-btn" class="btn-chip" title="Download and save 1-page ATS PDF for this resume">
+              <span>📥 1-Click Save PDF ↗</span>
+            </button>
+            <button type="button" id="copy-summary-btn" class="btn-chip" title="Copy tailored summary to clipboard">
+              <span>📋 Copy Summary</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- Auto-Fill Primary Action -->
       <button id="autofill-btn" class="btn btn-primary">
         <span class="btn-icon">⚡</span>
-        <span>Auto-Fill This Application</span>
+        <span id="autofill-btn-text">Auto-Fill This Application</span>
       </button>
 
       <div id="autofill-result" class="alert-box hidden"></div>

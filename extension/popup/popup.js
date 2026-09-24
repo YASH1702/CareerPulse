@@ -23,6 +23,153 @@ document.addEventListener("DOMContentLoaded", async () => {
   const aiToggle = document.getElementById("ai-toggle");
   const aiSection = document.getElementById("ai-section");
 
+  // Resume Selector Elements
+  const resumeSelect = document.getElementById("resume-select");
+  const detectedJobBadge = document.getElementById("detected-job-badge");
+  const selectedResumeRole = document.getElementById("selected-resume-role");
+  const selectedResumeType = document.getElementById("selected-resume-type");
+  const selectedResumeSummary = document.getElementById("selected-resume-summary");
+  const downloadPdfBtn = document.getElementById("download-pdf-btn");
+  const copySummaryBtn = document.getElementById("copy-summary-btn");
+  const autofillBtnText = document.getElementById("autofill-btn-text");
+
+  let selectedResume = null;
+  let customResumes = [];
+  let currentTabInfo = { url: "", title: "" };
+
+  // Query active tab information for smart job matching
+  try {
+    const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (activeTab) {
+      currentTabInfo = { url: activeTab.url || "", title: activeTab.title || "" };
+    }
+  } catch (e) {
+    console.warn("[JobPilot Extension Tab Query Error]:", e);
+  }
+
+  function setupResumeSelector() {
+    if (!candidateData) return;
+
+    customResumes = candidateData.customResumes || [];
+    const masterResume = candidateData.masterResume || candidateData.activeResume;
+
+    // Clear existing options
+    resumeSelect.innerHTML = "";
+
+    // 1. Master Resume option
+    const masterOpt = document.createElement("option");
+    masterOpt.value = "master";
+    masterOpt.textContent = `📄 Master Resume (${masterResume?.name ? masterResume.name.slice(0, 26) : "Baseline"})`;
+    resumeSelect.appendChild(masterOpt);
+
+    // 2. Custom tailored resumes
+    if (customResumes.length > 0) {
+      const optGroup = document.createElement("optgroup");
+      optGroup.label = `✨ Custom Job Resumes (${customResumes.length})`;
+
+      customResumes.forEach((cr) => {
+        const opt = document.createElement("option");
+        opt.value = cr.id;
+        opt.textContent = `✨ ${cr.jobTitle} @ ${cr.companyName}`;
+        optGroup.appendChild(opt);
+      });
+
+      resumeSelect.appendChild(optGroup);
+    }
+
+    // 3. Smart Matching: Match current tab to custom resume
+    let matchedResume = null;
+    const tabCombined = `${currentTabInfo.url} ${currentTabInfo.title}`.toLowerCase();
+
+    for (const cr of customResumes) {
+      const comp = (cr.companyName || "").toLowerCase().trim();
+      const role = (cr.jobTitle || "").toLowerCase().trim();
+      if (comp.length > 2 && tabCombined.includes(comp)) {
+        matchedResume = cr;
+        break;
+      }
+      if (cr.jobUrl && currentTabInfo.url && currentTabInfo.url.includes(cr.jobUrl)) {
+        matchedResume = cr;
+        break;
+      }
+      if (role.length > 4 && tabCombined.includes(role)) {
+        matchedResume = cr;
+        break;
+      }
+    }
+
+    if (matchedResume) {
+      resumeSelect.value = matchedResume.id;
+      selectedResume = matchedResume;
+      detectedJobBadge.textContent = `🎯 Matched: ${matchedResume.companyName}`;
+      detectedJobBadge.classList.remove("hidden");
+    } else {
+      detectedJobBadge.classList.add("hidden");
+      selectedResume = masterResume;
+      resumeSelect.value = "master";
+    }
+
+    updateSelectedResumeUI();
+  }
+
+  function updateSelectedResumeUI() {
+    if (!selectedResume) {
+      selectedResume = candidateData?.masterResume || candidateData?.activeResume;
+    }
+    if (!selectedResume) return;
+
+    const isTailored = selectedResume.resumeType === "TAILORED" || selectedResume.id !== candidateData?.masterResume?.id;
+
+    selectedResumeRole.textContent = selectedResume.jobTitle || selectedResume.targetRole || candidateData.headline || "Full Stack Developer";
+    selectedResumeRole.title = selectedResume.name;
+
+    if (isTailored) {
+      selectedResumeType.textContent = "✨ Tailored";
+      selectedResumeType.className = "detail-badge tailored";
+      autofillBtnText.textContent = `Auto-Fill (${selectedResume.companyName || "Tailored"})`;
+    } else {
+      selectedResumeType.textContent = "Master";
+      selectedResumeType.className = "detail-badge master";
+      autofillBtnText.textContent = "Auto-Fill with Master Profile";
+    }
+
+    selectedResumeSummary.textContent = selectedResume.summary || candidateData.bio || "Authentic professional summary with verified achievements.";
+
+    // Download ATS PDF button
+    downloadPdfBtn.onclick = () => {
+      const resumeId = selectedResume.id || candidateData?.activeResume?.id;
+      const url = resumeId ? `http://localhost:3000/resumes/${resumeId}` : "http://localhost:3000/resumes";
+      chrome.tabs.create({ url });
+    };
+
+    // Copy summary button
+    copySummaryBtn.onclick = () => {
+      const textToCopy = selectedResume.summary || candidateData.bio || "";
+      navigator.clipboard.writeText(textToCopy);
+      copySummaryBtn.innerHTML = "<span>✅ Copied!</span>";
+      setTimeout(() => {
+        copySummaryBtn.innerHTML = "<span>📋 Copy Summary</span>";
+      }, 2000);
+    };
+  }
+
+  // Handle dropdown selection change
+  resumeSelect.addEventListener("change", () => {
+    const val = resumeSelect.value;
+    if (val === "master") {
+      selectedResume = candidateData.masterResume || candidateData.activeResume;
+      detectedJobBadge.classList.add("hidden");
+    } else {
+      const found = customResumes.find((r) => r.id === val);
+      if (found) {
+        selectedResume = found;
+        detectedJobBadge.textContent = `✨ Custom: ${found.companyName}`;
+        detectedJobBadge.classList.remove("hidden");
+      }
+    }
+    updateSelectedResumeUI();
+  });
+
   // 1. Fetch Profile from Backend
   async function loadProfile() {
     statusBadge.className = "status-badge connecting";
@@ -41,7 +188,15 @@ document.addEventListener("DOMContentLoaded", async () => {
         candidateName.textContent = candidateData.fullName;
         candidateHeadline.textContent = candidateData.headline || candidateData.currentRole;
         candidateLocation.textContent = `📍 ${candidateData.location || "India"}`;
-        candidateResume.textContent = candidateData.activeResume ? `📄 ${candidateData.activeResume.name.slice(0, 18)}...` : "📄 Master Profile";
+        candidateResume.textContent = candidateData.activeResume ? `📄 ${candidateData.activeResume.name.slice(0, 18)}... ↗` : "📄 Master Profile ↗";
+        candidateResume.classList.add("clickable");
+        candidateResume.title = "Click to view / print 1-page ATS PDF in JobPilot";
+        candidateResume.onclick = () => {
+          const url = candidateData.activeResume?.id
+            ? `http://localhost:3000/resumes/${candidateData.activeResume.id}`
+            : "http://localhost:3000/resumes";
+          chrome.tabs.create({ url });
+        };
         candidateSkills.textContent = `🛠️ ${candidateData.skills?.length || 15} Skills`;
 
         const initials = candidateData.fullName
@@ -54,6 +209,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         statusBadge.className = "status-badge connected";
         statusText.textContent = "Connected";
+
+        // Setup custom resume selector with smart matching
+        setupResumeSelector();
       }
     } catch (err) {
       console.warn("[JobPilot Extension Connect Error]:", err);
@@ -65,6 +223,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         candidateHeadline.textContent = candidateData.headline;
         statusBadge.className = "status-badge connected";
         statusText.textContent = "Offline (Cached)";
+        setupResumeSelector();
       } else {
         statusBadge.className = "status-badge disconnected";
         statusText.textContent = "Offline";
@@ -90,18 +249,23 @@ document.addEventListener("DOMContentLoaded", async () => {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
       if (!tab?.id) throw new Error("No active tab found");
 
-      // Send message to content script
+      // Send message to content script with selected custom resume
       chrome.tabs.sendMessage(
         tab.id,
-        { action: "AUTOFILL_JOB_FORM", candidate: candidateData },
+        {
+          action: "AUTOFILL_JOB_FORM",
+          candidate: candidateData,
+          selectedResume: selectedResume,
+        },
         (response) => {
           autofillBtn.disabled = false;
-          autofillBtn.innerHTML = "<span class=\"btn-icon\">⚡</span><span>Auto-Fill This Application</span>";
+          autofillBtn.innerHTML = `<span class="btn-icon">⚡</span><span id="autofill-btn-text">${autofillBtnText.textContent}</span>`;
 
           if (chrome.runtime.lastError || !response) {
             showResult("Could not access page form. Please refresh the page.", "error");
           } else if (response.filledCount > 0) {
-            showResult(`🎉 Successfully filled ${response.filledCount} fields (${response.platform || "Job Form"})!`, "success");
+            const resumeLabel = selectedResume?.name ? `"${selectedResume.name.slice(0, 25)}..."` : "Your Profile";
+            showResult(`🎉 Successfully filled ${response.filledCount} fields using ${resumeLabel}! Remember to attach your 1-page PDF.`, "success");
           } else {
             showResult("No unfilled application fields detected on this page.", "error");
           }
@@ -109,7 +273,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       );
     } catch (err) {
       autofillBtn.disabled = false;
-      autofillBtn.innerHTML = "<span class=\"btn-icon\">⚡</span><span>Auto-Fill This Application</span>";
+      autofillBtn.innerHTML = `<span class="btn-icon">⚡</span><span id="autofill-btn-text">${autofillBtnText.textContent}</span>`;
       showResult(err.message || "Failed to autofill", "error");
     }
   });

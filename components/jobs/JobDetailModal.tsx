@@ -201,6 +201,7 @@ export function JobDetailModal({ job, onClose }: Props) {
               companyName={job.companyName}
               requiredSkills={job.requiredSkills}
               preferredSkills={job.preferredSkills}
+              applicationUrl={job.applicationUrl || undefined}
             />
             <RecruiterOutreachModal jobId={job.id} jobTitle={job.title} companyName={job.companyName} />
             <InterviewPrepModal jobId={job.id} jobTitle={job.title} companyName={job.companyName} />

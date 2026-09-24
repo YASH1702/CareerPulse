@@ -4,7 +4,7 @@ import prisma from "@/lib/db/client";
 import { getRequiredUserId } from "@/lib/auth/session";
 import { ArrowLeft, Download, FileText } from "lucide-react";
 import Link from "next/link";
-import { PrintResumeButton } from "@/components/resumes/PrintResumeButton";
+import { SaveResumeButton } from "@/components/resumes/PrintResumeButton";
 import { ReplicaResumeSheet } from "@/components/resumes/ReplicaResumeSheet";
 import type { ResumeData } from "@/types/resume";
 
@@ -37,7 +37,7 @@ export default async function ResumeViewPage({
   const certifications = (resume.certifications as unknown as ResumeData["certifications"]) || [];
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
+    <div className="space-y-6 max-w-4xl mx-auto print:space-y-0 print:max-w-none print:m-0 print:p-0 print:w-full">
       {/* Action Bar (hidden when printing) */}
       <div className="print:hidden flex items-center justify-between p-4 glass-card">
         <Link
@@ -52,7 +52,10 @@ export default async function ResumeViewPage({
           <span className="text-xs text-slate-400">
             Version: <strong className="text-white">{resume.name}</strong> ({resume.resumeType})
           </span>
-          <PrintResumeButton />
+          <SaveResumeButton
+            resumeId={resume.id}
+            filename={`${(user?.name || "Yashwant_Kariha").replace(/\s+/g, "_")}_Resume.pdf`}
+          />
         </div>
       </div>
 
@@ -63,7 +66,7 @@ export default async function ResumeViewPage({
         email={user?.email || "yashwantkariha1@gmail.com"}
         linkedinUrl={user?.profile?.linkedinUrl || "https://www.linkedin.com/in/yashwant-kariha-740630207/"}
         githubUrl={user?.profile?.githubUrl || "https://github.com/YASH1702"}
-        portfolioUrl={user?.profile?.portfolioUrl || "https://vscode-portfolio-main-blush.vercel.app/"}
+        portfolioUrl={user?.profile?.portfolioUrl || "https://portfolio3-ial7sxdz4-yashwants-projects-ec1ef74c.vercel.app/"}
         summary={resume.summary}
         skills={skills}
         experience={experience}
