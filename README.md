@@ -1,4 +1,4 @@
-# ✈️ JobPilot AI — Automated Job Application & Search Intelligence
+# ⚡ CareerPulse — Automated Job Application & Search Intelligence
 
 > An AI-powered co-pilot that scans, matches, tailors resumes, writes high-conversion cover letters, and tracks your job search pipeline end-to-end with strict anti-hallucination accuracy.
 
@@ -47,7 +47,7 @@
 - OpenAI API Key (optional for AI matching/parsing; deterministic fallback included)
 
 ### 2. Setup Environment Variables
-Create a `.env.local` file in the `jobpilot-ai` root:
+Create a `.env.local` file in the project root:
 
 ```env
 # Database (Neon PostgreSQL)
@@ -102,5 +102,5 @@ npm run build
 1. Push your repository to GitHub.
 2. Import the repository in [Vercel](https://vercel.com).
 3. Set your environment variables in Vercel Project Settings (`DATABASE_URL`, `AUTH_SECRET`, `OPENAI_API_KEY`, `NEXT_PUBLIC_APP_URL`).
-4. Set the Root Directory to `jobpilot-ai` if monorepo, or leave default.
+4. Leave Root Directory as default.
 5. Deploy! 🚀
