@@ -44,7 +44,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       currentTabInfo = { url: activeTab.url || "", title: activeTab.title || "" };
     }
   } catch (e) {
-    console.warn("[JobPilot Extension Tab Query Error]:", e);
+    console.warn("[CareerPulse Extension Tab Query Error]:", e);
   }
 
   function setupResumeSelector() {
@@ -182,7 +182,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       const data = await res.json();
       if (data.success && data.candidate) {
         candidateData = data.candidate;
-        chrome.storage.local.set({ jobpilot_candidate: candidateData });
+        chrome.storage.local.set({ careerpulse_candidate: candidateData, jobpilot_candidate: candidateData });
 
         // Update UI
         candidateName.textContent = candidateData.fullName;
@@ -190,7 +190,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         candidateLocation.textContent = `📍 ${candidateData.location || "India"}`;
         candidateResume.textContent = candidateData.activeResume ? `📄 ${candidateData.activeResume.name.slice(0, 18)}... ↗` : "📄 Master Profile ↗";
         candidateResume.classList.add("clickable");
-        candidateResume.title = "Click to view / print 1-page ATS PDF in JobPilot";
+        candidateResume.title = "Click to view / print 1-page ATS PDF in CareerPulse";
         candidateResume.onclick = () => {
           const url = candidateData.activeResume?.id
             ? `http://localhost:3000/resumes/${candidateData.activeResume.id}`
@@ -214,11 +214,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         setupResumeSelector();
       }
     } catch (err) {
-      console.warn("[JobPilot Extension Connect Error]:", err);
+      console.warn("[CareerPulse Extension Connect Error]:", err);
       // Try loading from local storage
-      const cached = await chrome.storage.local.get("jobpilot_candidate");
-      if (cached.jobpilot_candidate) {
-        candidateData = cached.jobpilot_candidate;
+      const cached = await chrome.storage.local.get(["careerpulse_candidate", "jobpilot_candidate"]);
+      const storedCandidate = cached.careerpulse_candidate || cached.jobpilot_candidate;
+      if (storedCandidate) {
+        candidateData = storedCandidate;
         candidateName.textContent = candidateData.fullName;
         candidateHeadline.textContent = candidateData.headline;
         statusBadge.className = "status-badge connected";
@@ -227,7 +228,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       } else {
         statusBadge.className = "status-badge disconnected";
         statusText.textContent = "Offline";
-        candidateName.textContent = "JobPilot AI Server Offline";
+        candidateName.textContent = "CareerPulse Server Offline";
         candidateHeadline.textContent = "Make sure localhost:3000 is running";
       }
     }
@@ -238,7 +239,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // 2. Auto-Fill Click Handler
   autofillBtn.addEventListener("click", async () => {
     if (!candidateData) {
-      showResult("Please connect to JobPilot backend first.", "error");
+      showResult("Please connect to CareerPulse backend first.", "error");
       return;
     }
 
@@ -322,7 +323,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       const data = await res.json();
       if (data.success) {
-        showResult(`📌 Tracked as APPLIED in JobPilot Dashboard!`, "success");
+        showResult(`📌 Tracked as APPLIED in CareerPulse Dashboard!`, "success");
       } else {
         showResult(data.error || "Failed to track", "error");
       }
@@ -367,7 +368,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         aiAnswerBox.classList.remove("hidden");
       }
     } catch {
-      aiAnswerText.textContent = "Could not connect to AI service. Please ensure JobPilot server is running.";
+      aiAnswerText.textContent = "Could not connect to AI service. Please ensure CareerPulse server is running.";
       aiAnswerBox.classList.remove("hidden");
     } finally {
       aiGenerateBtn.disabled = false;

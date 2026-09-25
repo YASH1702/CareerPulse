@@ -87,12 +87,12 @@ export async function POST(req: NextRequest) {
         resumeId: activeResume?.id || null,
         appStatus: "APPLIED",
         appliedAt: new Date(),
-        submissionProof: `Applied via JobPilot Chrome Extension on ${platform || "Web Portal"}`,
+        submissionProof: `Applied via CareerPulse Chrome Extension on ${platform || "Web Portal"}`,
       },
       update: {
         appStatus: "APPLIED",
         appliedAt: new Date(),
-        submissionProof: `Applied via JobPilot Chrome Extension on ${platform || "Web Portal"}`,
+        submissionProof: `Applied via CareerPulse Chrome Extension on ${platform || "Web Portal"}`,
       },
     });
 
@@ -101,7 +101,7 @@ export async function POST(req: NextRequest) {
       data: {
         applicationId: application.id,
         eventType: "AUTO_APPLY_SUBMITTED",
-        description: `Application submitted via JobPilot Chrome Extension for ${jobTitle} at ${companyName} (${platform || "Web"})`,
+        description: `Application submitted via CareerPulse Chrome Extension for ${jobTitle} at ${companyName} (${platform || "Web"})`,
         metadata: {
           source: platform || "ChromeExtension",
           jobUrl,

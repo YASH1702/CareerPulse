@@ -12,7 +12,7 @@ print(f"Saved image to {img_path}")
 
 # Extract structured text with font, size, color, bbox
 text_data = page.get_text("dict")
-with open(r"d:\AI Job Application Agent\jobpilot-ai\scripts\extracted_resume.json", "w", encoding="utf-8") as f:
+with open(r"D:\CareerPulse\CareerPulse\scripts\extracted_resume.json", "w", encoding="utf-8") as f:
     json.dump(text_data, f, indent=2)
 
 print("Page rect:", page.rect)

@@ -5,7 +5,7 @@ import prisma from "@/lib/db/client";
 import { auth } from "@/auth";
 import { Sparkles, ArrowRight, Briefcase, FileText, CheckCircle2, Building2 } from "lucide-react";
 
-export const metadata: Metadata = { title: "Overview | JobPilot AI" };
+export const metadata: Metadata = { title: "Overview | CareerPulse" };
 
 export default async function DashboardPage() {
   const session = await auth();

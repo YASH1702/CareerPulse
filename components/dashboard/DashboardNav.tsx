@@ -46,7 +46,7 @@ export function DashboardNav() {
             <Zap size={15} className="text-white" />
           </div>
           <div>
-            <p className="font-semibold text-sm text-white leading-tight">JobPilot AI</p>
+            <p className="font-semibold text-sm text-white leading-tight">CareerPulse</p>
             <p className="text-[10px] text-slate-500 leading-tight">Apply smarter</p>
           </div>
         </Link>
@@ -105,7 +105,7 @@ export function DashboardNav() {
             </Link>
           );
         })}
-        <p className="text-[10px] text-slate-600 px-3 pt-2">JobPilot AI · v1.0.0</p>
+        <p className="text-[10px] text-slate-600 px-3 pt-2">CareerPulse · v1.0.0</p>
       </div>
     </aside>
   );

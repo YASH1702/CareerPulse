@@ -1,4 +1,4 @@
-﻿import redis from "./client";
+import redis from "./client";
 
 const CACHE_TTL = 60 * 60 * 24 * 7; // 7 days default
 
@@ -36,5 +36,5 @@ export function buildJobAnalysisCacheKey(
   jobHash: string,
   profileVersion: string
 ): string {
-  return `jobpilot:analysis:${jobHash}:${profileVersion}`;
+  return `careerpulse:analysis:${jobHash}:${profileVersion}`;
 }

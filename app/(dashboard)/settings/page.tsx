@@ -4,7 +4,7 @@ import { auth } from "@/auth";
 import { User, Key, Bell, Shield, Database, Sparkles, Mail, Server, ArrowRight } from "lucide-react";
 import Link from "next/link";
 
-export const metadata: Metadata = { title: "Settings & System Status | JobPilot AI" };
+export const metadata: Metadata = { title: "Settings & System Status | CareerPulse" };
 
 export default async function SettingsPage() {
   const session = await auth();
@@ -49,7 +49,7 @@ export default async function SettingsPage() {
             </div>
             <div>
               <h3 className="font-semibold text-white text-sm flex items-center gap-2">
-                <span>JobPilot AI Chrome Extension (Universal Auto-Filler)</span>
+                <span>CareerPulse Chrome Extension (Universal Auto-Filler)</span>
                 <span className="text-[10px] bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded-full font-bold border border-blue-500/30">
                   Ready to Load
                 </span>
@@ -71,7 +71,7 @@ export default async function SettingsPage() {
             <li>Click <strong>"Load unpacked"</strong> and select the directory:</li>
           </ol>
           <div className="p-2.5 bg-black/50 rounded-lg border border-white/5 font-mono text-[11px] text-emerald-400 select-all break-all">
-            d:\AI Job Application Agent\jobpilot-ai\extension
+            D:\CareerPulse\CareerPulse\extension
           </div>
         </div>
       </div>
@@ -83,7 +83,7 @@ export default async function SettingsPage() {
           <h3 className="font-semibold text-white text-sm">Integrations &amp; Cloud Services Status</h3>
         </div>
         <p className="text-xs text-slate-400">
-          JobPilot AI is architected with graceful degradation. Missing keys automatically switch to deterministic fallback logic without crashing.
+          CareerPulse is architected with graceful degradation. Missing keys automatically switch to deterministic fallback logic without crashing.
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">

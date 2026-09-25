@@ -1,5 +1,5 @@
 // LinkedIn Easy Apply & Sourcing Content Script
-console.log("[JobPilot AI] LinkedIn Co-Pilot injected.");
+console.log("[CareerPulse] LinkedIn Co-Pilot injected.");
 
 // Message listener from popup
 chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
@@ -27,9 +27,9 @@ function observeEasyApplyModal() {
   const modal = document.querySelector(".jobs-easy-apply-modal, .artdeco-modal");
   if (!modal) return;
 
-  chrome.storage.local.get(["autoFillEnabled", "jobpilot_candidate"], (res) => {
+  chrome.storage.local.get(["autoFillEnabled", "careerpulse_candidate", "jobpilot_candidate"], (res) => {
     if (res.autoFillEnabled === false) return;
-    const candidate = res.jobpilot_candidate;
+    const candidate = res.careerpulse_candidate || res.jobpilot_candidate;
 
     // 1. Fill Text Inputs with candidate profile if empty
     modal.querySelectorAll("input[type='text'], input[type='tel']").forEach((input) => {

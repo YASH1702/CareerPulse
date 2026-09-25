@@ -37,7 +37,7 @@ export function DailyDigestEmail({
     <div style={{ fontFamily: "Arial, sans-serif", backgroundColor: "#0a0f1e", color: "#f8fafc", padding: "24px", maxWidth: "600px", margin: "0 auto", borderRadius: "12px" }}>
       {/* Header */}
       <div style={{ borderBottom: "1px solid rgba(255,255,255,0.1)", paddingBottom: "16px", marginBottom: "20px" }}>
-        <h1 style={{ color: "#3b82f6", fontSize: "20px", margin: "0 0 4px 0" }}>JobPilot AI</h1>
+        <h1 style={{ color: "#3b82f6", fontSize: "20px", margin: "0 0 4px 0" }}>CareerPulse</h1>
         <p style={{ color: "#94a3b8", fontSize: "14px", margin: "0" }}>Daily Match &amp; Application Digest · {dateStr}</p>
       </div>
 
@@ -126,7 +126,7 @@ export function DailyDigestEmail({
 
       {/* Footer */}
       <div style={{ marginTop: "30px", paddingTop: "16px", borderTop: "1px solid rgba(255,255,255,0.06)", fontSize: "11px", color: "#64748b", textAlign: "center" }}>
-        <p style={{ margin: "0" }}>JobPilot AI · Smart Job Application Automation</p>
+        <p style={{ margin: "0" }}>CareerPulse · Smart Job Application Automation</p>
       </div>
     </div>
   );

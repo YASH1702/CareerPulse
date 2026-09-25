@@ -155,11 +155,11 @@ export function generateIntelligentTailoredResume(params: {
         projBullets.push(naturalAiBullet);
       }
     } else if (/careerpulse|career pulse|jobpilot|job pilot|job tracker/i.test(proj.name)) {
-      const naturalJobPilotBullet = "Developed a Manifest V3 Chrome extension for 1-click form autofill and real-time application tracking across career portals.";
+      const naturalCareerPulseBullet = "Developed a Manifest V3 Chrome extension for 1-click form autofill and real-time application tracking across career portals.";
       if (projBullets.length >= 2) {
-        projBullets[1] = naturalJobPilotBullet;
+        projBullets[1] = naturalCareerPulseBullet;
       } else {
-        projBullets.push(naturalJobPilotBullet);
+        projBullets.push(naturalCareerPulseBullet);
       }
     }
 

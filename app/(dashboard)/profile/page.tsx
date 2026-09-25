@@ -8,7 +8,7 @@ import { EducationPanel } from "@/components/profile/EducationPanel";
 import { LinkedInImportModal } from "@/components/profile/LinkedInImportModal";
 import { getProfile } from "@/actions/profile";
 
-export const metadata: Metadata = { title: "Profile | JobPilot AI" };
+export const metadata: Metadata = { title: "Profile | CareerPulse" };
 
 const TABS = [
   { id: "basic", label: "Basic Info" },

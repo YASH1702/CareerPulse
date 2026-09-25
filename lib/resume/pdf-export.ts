@@ -42,7 +42,7 @@ export async function exportResumeToPdf({
     }
 
     if (!target) {
-      console.error(`[JobPilot PDF Export]: Target resume element not found (tried "${elementId}").`);
+      console.error(`[CareerPulse PDF Export]: Target resume element not found (tried "${elementId}").`);
       if (onProgress) onProgress("error");
       return false;
     }
@@ -216,7 +216,7 @@ export async function exportResumeToPdf({
     if (onProgress) onProgress("done");
     return true;
   } catch (error) {
-    console.error("[JobPilot PDF Export Error]:", error);
+    console.error("[CareerPulse PDF Export Error]:", error);
     if (onProgress) onProgress("error");
     return false;
   }

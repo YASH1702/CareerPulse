@@ -4,7 +4,7 @@ import { AutoApplySettings } from "@/components/auto-apply/AutoApplySettings";
 import { AutoApplyQueue } from "@/components/auto-apply/AutoApplyQueue";
 import { getAutoApplyConfigAction, getAutoApplyQueueAction } from "@/actions/auto-apply";
 
-export const metadata: Metadata = { title: "Autonomous Auto-Apply Hub | JobPilot AI" };
+export const metadata: Metadata = { title: "Autonomous Auto-Apply Hub | CareerPulse" };
 
 export default async function AutoApplyPage() {
   const [config, queue] = await Promise.all([

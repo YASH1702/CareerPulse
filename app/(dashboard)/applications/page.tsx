@@ -3,7 +3,7 @@ import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { KanbanBoard } from "@/components/applications/KanbanBoard";
 import { getApplications } from "@/actions/applications";
 
-export const metadata: Metadata = { title: "Application Tracker | JobPilot AI" };
+export const metadata: Metadata = { title: "Application Tracker | CareerPulse" };
 
 export default async function ApplicationsPage() {
   const applications = await getApplications();

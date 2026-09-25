@@ -1,7 +1,7 @@
 /**
- * JobPilot AI - Universal Form Auto-Filler Engine
+ * CareerPulse - Universal Form Auto-Filler Engine
  * Form-Header Docked Banner + Top-Right Floating Copilot strictly restricted to Job Platforms and Career Portals.
- * Inactive / Hidden when JobPilot server is offline.
+ * Inactive / Hidden when CareerPulse server is offline.
  */
 
 (function () {
@@ -9,7 +9,7 @@
   let isServerOnline = false;
   let lastServerCheck = 0;
 
-  // 1. Check if JobPilot backend (localhost:3000) is online and reachable
+  // 1. Check if CareerPulse backend (localhost:3000) is online and reachable
   async function checkServerStatus() {
     const now = Date.now();
     // Cache liveness check for 10 seconds to avoid excessive network calls
@@ -33,7 +33,7 @@
           cachedCandidate = data.candidate;
           isServerOnline = true;
           lastServerCheck = now;
-          await chrome.storage.local.set({ jobpilot_candidate: data.candidate });
+          await chrome.storage.local.set({ careerpulse_candidate: data.candidate, jobpilot_candidate: data.candidate });
           return true;
         }
       }
@@ -226,7 +226,7 @@
       <div class="jp-banner-left">
         <span class="jp-banner-logo">⚡</span>
         <div class="jp-banner-text">
-          <strong class="jp-banner-title">JobPilot AI Copilot</strong>
+          <strong class="jp-banner-title">CareerPulse Copilot</strong>
           <span class="jp-banner-desc">Ready with ${resumeLabel}</span>
         </div>
       </div>
@@ -248,10 +248,10 @@
       if (cachedCandidate) {
         const resumeToUse = findMatchingCustomResume(cachedCandidate);
         const res = executeUniversalAutofill(cachedCandidate, resumeToUse);
-        showToast(`🎉 JobPilot filled ${res.filledCount} fields using ${resumeToUse ? resumeToUse.name.slice(0, 22) : 'profile'}!`);
+        showToast(`🎉 CareerPulse filled ${res.filledCount} fields using ${resumeToUse ? resumeToUse.name.slice(0, 22) : 'profile'}!`);
         btn.innerHTML = `<span>✅ Filled (${res.filledCount} Fields)</span>`;
       } else {
-        showToast("⚠️ JobPilot server is offline. Please start localhost:3000.");
+        showToast("⚠️ CareerPulse server is offline. Please start localhost:3000.");
         btn.innerHTML = "<span>⚡ 1-Click Auto-Fill</span>";
       }
 
@@ -286,9 +286,9 @@
     const widget = document.createElement("div");
     widget.id = "jobpilot-floating-copilot";
     widget.innerHTML = `
-      <div class="jp-pill-btn" title="Click to 1-Click Auto-Fill with JobPilot AI">
+      <div class="jp-pill-btn" title="Click to 1-Click Auto-Fill with CareerPulse">
         <span class="jp-pill-icon">⚡</span>
-        <span class="jp-pill-text">Auto-Fill (JobPilot)</span>
+        <span class="jp-pill-text">Auto-Fill (CareerPulse)</span>
       </div>
     `;
 
@@ -297,9 +297,9 @@
         const resumeToUse = findMatchingCustomResume(cachedCandidate);
         const res = executeUniversalAutofill(cachedCandidate, resumeToUse);
         const label = resumeToUse ? (resumeToUse.companyName || resumeToUse.name.slice(0, 20)) : "profile";
-        showToast(`🎉 JobPilot filled ${res.filledCount} fields using ${label}!`);
+        showToast(`🎉 CareerPulse filled ${res.filledCount} fields using ${label}!`);
       } else {
-        showToast("⚠️ JobPilot server is offline. Please start localhost:3000.");
+        showToast("⚠️ CareerPulse server is offline. Please start localhost:3000.");
       }
     });
 
@@ -377,7 +377,7 @@
       highlightElement(element);
       return true;
     } catch (e) {
-      console.warn("[JobPilot AutoFill Field Warning]:", e);
+      console.warn("[CareerPulse AutoFill Field Warning]:", e);
       return false;
     }
   }

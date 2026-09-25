@@ -30,9 +30,9 @@ export async function sendDailyDigestEmail(params: {
   if (resend) {
     try {
       await resend.emails.send({
-        from: "JobPilot AI <updates@resend.dev>",
+        from: "CareerPulse <updates@resend.dev>",
         to: userEmail,
-        subject: `🎯 JobPilot Daily Digest: ${digestData.topMatches.length} Top Matches for You`,
+        subject: `🎯 CareerPulse Daily Digest: ${digestData.topMatches.length} Top Matches for You`,
         react: React.createElement(DailyDigestEmail, digestData),
       });
       console.log(`[Email] Sent Daily Digest to ${userEmail}`);

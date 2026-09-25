@@ -5,7 +5,7 @@ import { ResumeCard } from "@/components/resumes/ResumeCard";
 import { getResumes } from "@/actions/resumes";
 import { FileText, Upload } from "lucide-react";
 
-export const metadata: Metadata = { title: "Resumes | JobPilot AI" };
+export const metadata: Metadata = { title: "Resumes | CareerPulse" };
 
 export default async function ResumesPage() {
   const resumes = await getResumes();

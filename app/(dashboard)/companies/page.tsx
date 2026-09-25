@@ -3,7 +3,7 @@ import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { CompanyList } from "@/components/companies/CompanyList";
 import { getCompanies } from "@/actions/companies";
 
-export const metadata: Metadata = { title: "Company Intelligence | JobPilot AI" };
+export const metadata: Metadata = { title: "Company Intelligence | CareerPulse" };
 
 export default async function CompaniesPage() {
   const companies = await getCompanies();

@@ -8,7 +8,7 @@ import { SaveResumeButton } from "@/components/resumes/PrintResumeButton";
 import { ReplicaResumeSheet } from "@/components/resumes/ReplicaResumeSheet";
 import type { ResumeData } from "@/types/resume";
 
-export const metadata: Metadata = { title: "ATS Resume Preview | JobPilot AI" };
+export const metadata: Metadata = { title: "ATS Resume Preview | CareerPulse" };
 
 export default async function ResumeViewPage({
   params,

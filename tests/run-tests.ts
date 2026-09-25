@@ -22,7 +22,7 @@ function assert(condition: boolean, message: string) {
 
 async function runAllTests() {
   console.log("\n=========================================");
-  console.log("   🧪 RUNNING JOBPILOT AI TEST SUITE     ");
+  console.log("   🧪 RUNNING CAREERPULSE TEST SUITE     ");
   console.log("=========================================\n");
 
   // ─── 1. Scoring Calculations ───────────────────

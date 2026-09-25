@@ -1,6 +1,6 @@
-# ⚡ JobPilot AI - Universal Auto-Apply Chrome Extension
+# ⚡ CareerPulse - Universal Auto-Apply Chrome Extension
 
-The official Chrome Extension for **JobPilot AI** that enables 1-click auto-fill for job application forms across all platforms (**LinkedIn Easy Apply**, **Greenhouse**, **Lever**, **Workday**, **Indeed**, **Wellfound**, **Ashby**, **SmartRecruiters**, and custom career sites).
+The official Chrome Extension for **CareerPulse** that enables 1-click auto-fill for job application forms across all platforms (**LinkedIn Easy Apply**, **Greenhouse**, **Lever**, **Workday**, **Indeed**, **Wellfound**, **Ashby**, **SmartRecruiters**, and custom career sites).
 
 ---
 
@@ -16,10 +16,10 @@ In **Google Chrome**, **Brave**, **Microsoft Edge**, or **Arc**:
 ### Step 3: Load Unpacked Extension
 - Click the **"Load unpacked"** button in the top-left corner.
 - Browse to and select the folder:
-  `D:\AI Job Application Agent\jobpilot-ai\extension`
+  `D:\CareerPulse\CareerPulse\extension`
 - Click **Select Folder**.
 
-🎉 **JobPilot AI is now installed and ready!** Pin the ⚡ JobPilot icon to your browser toolbar.
+🎉 **CareerPulse is now installed and ready!** Pin the ⚡ CareerPulse icon to your browser toolbar.
 
 ---
 
@@ -29,7 +29,7 @@ In **Google Chrome**, **Brave**, **Microsoft Edge**, or **Arc**:
 - Open any job application on **LinkedIn**, **Greenhouse**, **Lever**, **Workday**, or any company portal.
 - Either:
   - Click the floating **`⚡ Auto-Fill Form`** pill on the bottom-right of the page.
-  - Or click the **JobPilot extension icon** in your toolbar and press **"Auto-Fill This Application"**.
+  - Or click the **CareerPulse extension icon** in your toolbar and press **"Auto-Fill This Application"**.
 - All matching fields (Name, Email, Phone, Location, Skills, Years of Experience, Notice Period, Salary, LinkedIn/GitHub links, Work Authorization) will be automatically filled with glowing highlights!
 
 ### 2. **AI Screening Question Copilot**
@@ -38,4 +38,4 @@ In **Google Chrome**, **Brave**, **Microsoft Edge**, or **Arc**:
 - Instant 1-click tailored answers based on your verified profile and experience.
 
 ### 3. **Automatic Application Pipeline Tracking**
-- When you submit an application, click **"📌 Mark as Applied"** in the popup to record the job into your local JobPilot database and Kanban board.
+- When you submit an application, click **"📌 Mark as Applied"** in the popup to record the job into your local CareerPulse database and Kanban board.

@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import SignInForm from "./SignInForm";
 
-export const metadata: Metadata = { title: "Sign In | JobPilot AI" };
+export const metadata: Metadata = { title: "Sign In | CareerPulse" };
 
 export default function SignInPage() {
   return (

@@ -34,7 +34,7 @@ function extractSkillsFromText(text: string): string[] {
 export async function fetchRemoteOKJobs(keywords: string[] = []): Promise<NormalizedJob[]> {
   try {
     const res = await fetch("https://remoteok.com/api", {
-      headers: { "User-Agent": "JobPilot-AI/1.0" },
+      headers: { "User-Agent": "CareerPulse/1.0" },
       next: { revalidate: 3600 },
       signal: AbortSignal.timeout(8000),
     });
@@ -109,7 +109,7 @@ export async function fetchRemoteOKJobs(keywords: string[] = []): Promise<Normal
 export async function fetchHimalayasJobs(keywords: string[] = []): Promise<NormalizedJob[]> {
   try {
     const res = await fetch("https://himalayas.app/jobs/api?limit=30", {
-      headers: { "User-Agent": "JobPilot-AI/1.0" },
+      headers: { "User-Agent": "CareerPulse/1.0" },
       next: { revalidate: 3600 },
       signal: AbortSignal.timeout(8000),
     });
@@ -173,7 +173,7 @@ export async function fetchHimalayasJobs(keywords: string[] = []): Promise<Norma
 export async function fetchArbeitnowJobs(): Promise<NormalizedJob[]> {
   try {
     const res = await fetch("https://arbeitnow.com/api/job-board-api", {
-      headers: { "User-Agent": "JobPilot-AI/1.0" },
+      headers: { "User-Agent": "CareerPulse/1.0" },
       next: { revalidate: 3600 },
       signal: AbortSignal.timeout(8000),
     });

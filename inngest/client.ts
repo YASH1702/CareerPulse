@@ -20,6 +20,6 @@ export type Events = {
 };
 
 export const inngest = new Inngest({
-  id: "jobpilot-ai",
-  name: "JobPilot AI",
+  id: "careerpulse",
+  name: "CareerPulse",
 });

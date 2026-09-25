@@ -3,7 +3,7 @@ import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { JobList } from "@/components/jobs/JobList";
 import { getJobs } from "@/actions/jobs";
 
-export const metadata: Metadata = { title: "Job Opportunities | JobPilot AI" };
+export const metadata: Metadata = { title: "Job Opportunities | CareerPulse" };
 
 export default async function JobsPage() {
   const jobs = await getJobs();

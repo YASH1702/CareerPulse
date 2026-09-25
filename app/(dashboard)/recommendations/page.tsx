@@ -3,7 +3,7 @@ import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { RecommendationFeed } from "@/components/recommendations/RecommendationFeed";
 import { getRecommendations } from "@/actions/recommendations";
 
-export const metadata: Metadata = { title: "Matches & Recommendations | JobPilot AI" };
+export const metadata: Metadata = { title: "Matches & Recommendations | CareerPulse" };
 
 export default async function RecommendationsPage() {
   const data = await getRecommendations();

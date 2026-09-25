@@ -1,5 +1,5 @@
 // Naukri.com 1-Click Apply & Sourcing Content Script
-console.log("[JobPilot AI] Naukri Co-Pilot injected.");
+console.log("[CareerPulse] Naukri Co-Pilot injected.");
 
 chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
   if (req.action === "SCRAPE_JOBS") {

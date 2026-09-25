@@ -939,7 +939,7 @@ export function TailorResumeModal({
                           </div>
                           <div className="flex items-center gap-2">
                             <span className="text-[10px] font-semibold text-emerald-300 bg-emerald-900/60 px-2 py-0.5 rounded border border-emerald-500/30">
-                              Active in JobPilot Extension
+                              Active in CareerPulse Extension
                             </span>
                           </div>
                         </div>
@@ -994,7 +994,7 @@ export function TailorResumeModal({
                                 <span>3. 1-Click Fill &amp; Attach PDF</span>
                               </span>
                               <p className="text-slate-300 leading-relaxed">
-                                JobPilot AI Extension autofills all forms &amp; answers in 1 click. Simply attach the 1-page PDF file!
+                                CareerPulse Extension autofills all forms &amp; answers in 1 click. Simply attach the 1-page PDF file!
                               </p>
                             </div>
                             <div className="flex items-center gap-1 text-emerald-400 font-semibold text-[10px] mt-1">
@@ -1275,7 +1275,7 @@ export function TailorResumeModal({
                     target="_blank"
                     rel="noopener noreferrer"
                     className="px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-emerald-400 hover:text-emerald-300 font-semibold text-xs transition-all flex items-center gap-1.5 shadow-sm"
-                    title="Open company job portal to apply with JobPilot extension"
+                    title="Open company job portal to apply with CareerPulse extension"
                   >
                     <span>Open Company Portal</span>
                     <ArrowRight size={13} />

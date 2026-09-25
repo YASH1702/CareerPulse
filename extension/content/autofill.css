@@ -1,4 +1,5 @@
-/* ⚡ JobPilot AI Inline Form Banner (Docked Directly Above Form / Inside Modal Header) */
+/* ⚡ CareerPulse Inline Form Banner (Docked Directly Above Form / Inside Modal Header) */
+.careerpulse-inline-banner,
 .jobpilot-inline-banner {
   display: flex !important;
   align-items: center !important;
@@ -89,6 +90,7 @@
 }
 
 /* ⚡ Top-Right Floating Copilot Pill (Always Above Modals & Backdrops) */
+#careerpulse-floating-copilot,
 #jobpilot-floating-copilot {
   position: fixed !important;
   top: 24px !important;
@@ -136,6 +138,7 @@
 }
 
 /* Highlighted Autofilled Field */
+.careerpulse-highlighted-field,
 .jobpilot-highlighted-field {
   transition: all 0.4s ease !important;
   border-color: #3b82f6 !important;
@@ -144,6 +147,7 @@
 }
 
 /* Toast Message */
+#careerpulse-toast,
 #jobpilot-toast {
   visibility: hidden;
   position: fixed;
@@ -166,6 +170,7 @@
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
+#careerpulse-toast.careerpulse-toast-show,
 #jobpilot-toast.jobpilot-toast-show {
   visibility: visible;
   opacity: 1;
@@ -197,6 +202,7 @@
 }
 
 /* 📎 File Upload Input Highlighting */
+.careerpulse-file-highlight,
 .jobpilot-file-highlight {
   outline: 2.5px dashed #0284c7 !important;
   outline-offset: 4px !important;

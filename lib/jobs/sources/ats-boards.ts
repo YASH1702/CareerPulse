@@ -9,7 +9,7 @@ import { isLocationMatchingIndia, isRoleMatchingTargets } from "../locations";
 export async function fetchGreenhouseJobs(companySlug: string): Promise<NormalizedJob[]> {
   try {
     const res = await fetch(`https://boards-api.greenhouse.io/v1/boards/${encodeURIComponent(companySlug)}/jobs?content=true`, {
-      headers: { "User-Agent": "JobPilot-AI/1.0" },
+      headers: { "User-Agent": "CareerPulse/1.0" },
       signal: AbortSignal.timeout(8000),
     });
 
@@ -64,7 +64,7 @@ export async function fetchGreenhouseJobs(companySlug: string): Promise<Normaliz
 export async function fetchLeverJobs(companySlug: string): Promise<NormalizedJob[]> {
   try {
     const res = await fetch(`https://api.lever.co/v0/postings/${encodeURIComponent(companySlug)}?mode=json`, {
-      headers: { "User-Agent": "JobPilot-AI/1.0" },
+      headers: { "User-Agent": "CareerPulse/1.0" },
       signal: AbortSignal.timeout(8000),
     });
 

@@ -1,5 +1,5 @@
 /**
- * JobPilot AI - Background Service Worker (Manifest V3)
+ * CareerPulse - Background Service Worker (Manifest V3)
  */
 
 const BACKEND_URL = "http://localhost:3000/api/extension";
@@ -11,18 +11,18 @@ async function syncProfile() {
     if (res.ok) {
       const data = await res.json();
       if (data.success && data.candidate) {
-        await chrome.storage.local.set({ jobpilot_candidate: data.candidate });
-        console.log("[JobPilot Background] Candidate profile synced successfully:", data.candidate.fullName);
+        await chrome.storage.local.set({ careerpulse_candidate: data.candidate, jobpilot_candidate: data.candidate });
+        console.log("[CareerPulse Background] Candidate profile synced successfully:", data.candidate.fullName);
       }
     }
   } catch (err) {
-    console.warn("[JobPilot Background] Could not reach backend server:", err);
+    console.warn("[CareerPulse Background] Could not reach backend server:", err);
   }
 }
 
 // Initial Setup
 chrome.runtime.onInstalled.addListener(() => {
-  console.log("[JobPilot Background] Extension Installed.");
+  console.log("[CareerPulse Background] Extension Installed.");
   syncProfile();
 });
 

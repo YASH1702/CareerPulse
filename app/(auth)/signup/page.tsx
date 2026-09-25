@@ -29,7 +29,7 @@ export default function SignUpPage() {
           <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center">
             <Zap size={18} className="text-white" />
           </div>
-          <span className="font-bold text-lg text-white">JobPilot AI</span>
+          <span className="font-bold text-lg text-white">CareerPulse</span>
         </Link>
         <h1 className="text-xl font-semibold text-white">Create your account</h1>
         <p className="text-slate-400 text-sm mt-1">

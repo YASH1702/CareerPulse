@@ -6,7 +6,7 @@ import { ApplicationFunnel } from "@/components/analytics/ApplicationFunnel";
 import { ActivityTimeline } from "@/components/analytics/ActivityTimeline";
 import { getAnalyticsData } from "@/actions/analytics";
 
-export const metadata: Metadata = { title: "Analytics & Intelligence | JobPilot AI" };
+export const metadata: Metadata = { title: "Analytics & Intelligence | CareerPulse" };
 
 export default async function AnalyticsPage() {
   const data = await getAnalyticsData();
